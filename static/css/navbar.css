@@ -1,0 +1,67 @@
+/* ==========================================================
+   NAVBAR.CSS — Navegação, footer e divisores
+   ========================================================== */
+
+/* --- Linha de gradiente de marca --- */
+.gradient-divider,
+.gradient-divider-long {
+    height: 5px;
+    background: linear-gradient(to right, var(--brand-blue), var(--brand-orange));
+    width: 100%;
+}
+
+/* --- Links de navegação --- */
+.navbar-nav .nav-link {
+    transition: transform var(--transition-base), color var(--transition-base);
+}
+.navbar-nav .nav-link:hover {
+    transform: scale(1.08);
+    color: var(--brand-orange) !important;
+}
+
+/* --- Alertas flash --- */
+.alert-orange-custom  { color: #fff; background-color: var(--brand-orange); border-color: var(--brand-orange); }
+.alert-success-custom { color: #fff; background-color: var(--brand-green);  border-color: var(--brand-green);  }
+.alert-danger-custom  { color: #fff; background-color: var(--brand-red);    border-color: var(--brand-red);    }
+
+/* --- Cor de fundo padrão da marca --- */
+.bg-primary-custom { background-color: var(--brand-blue) !important; }
+.bg-green-custom   { background-color: var(--brand-green) !important; }
+.bg-red-custom     { background-color: var(--brand-red) !important; }
+.text-orange-custom { color: var(--brand-orange) !important; }
+.border-warning     { border-color: var(--brand-orange) !important; }
+
+/* --- Footer --- */
+.main-footer {
+    background-color: var(--brand-blue);
+    color: white;
+    padding: 3rem 0;
+}
+.footer-link {
+    color: var(--brand-blue);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+}
+.footer-link:hover { color: var(--brand-orange); }
+.footer-logo  { filter: none; }
+.social-icon-dark { color: var(--brand-blue); }
+.social-icon-dark:hover { color: var(--brand-orange); }
+.text-muted-custom  { color: #6c757d !important; }
+.dotted-divider     { border-top: 2px dotted var(--brand-blue); width: 50%; margin: 1.5rem auto; }
+.dotted-divider-short { border-top: 2px dotted white; width: 30%; }
+
+/* --- Header comemorativo (página pública de agendamento) --- */
+.header-comemorativo {
+    background-color: #1A1A1A;
+    padding: 1px 0;
+    margin-bottom: 20px;
+    border-bottom: 3px solid var(--brand-gold);
+    text-align: center;
+}
+.logo-10-anos {
+    height: 300px;
+    width: auto;
+    object-fit: contain;
+    filter: drop-shadow(0px 0px 15px rgba(212, 175, 55, 0.4));
+    transition: transform var(--transition-base);
+}

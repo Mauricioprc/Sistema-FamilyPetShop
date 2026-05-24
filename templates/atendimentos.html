@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% block title %}Histórico — Family Pet Shop{% endblock %}
+{% block content %}
+
+  {% set total_presentes = atendimentos | selectattr('status_presenca', 'equalto', 'Presente') | list | length %}
+  {% set total_faltas = atendimentos | selectattr('status_presenca', 'equalto', 'Faltou') | list | length %}
+
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+      <h1>Histórico de Atendimentos</h1>
+      <h5 class="text-muted">{{ data_selecionada.strftime('%d de %B de %Y') }}</h5>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <a href="{{ url_for('agenda.historico', data=dia_anterior.isoformat()) }}" class="btn btn-outline-primary-custom">&lsaquo;</a>
+      <form method="GET" action="{{ url_for('agenda.historico') }}" class="d-inline">
+        <input type="date" name="data" class="form-control" value="{{ data_selecionada.isoformat() }}" onchange="this.form.submit()">
+      </form>
+      <a href="{{ url_for('agenda.historico', data=proximo_dia.isoformat()) }}" class="btn btn-outline-primary-custom">&rsaquo;</a>
+    </div>
+    <a href="{{ url_for('agenda.novo') }}" class="btn btn-primary-custom"><i class="bi bi-plus-circle-fill"></i> Registrar Banho / Tosa</a>
+  </div>
+
+  <div class="row mb-4">
+      <div class="col-md-6 mb-2">
+          <div class="card bg-success text-white border-0 shadow-sm">
+              <div class="card-body py-2 d-flex justify-content-between align-items-center">
+                  <div>
+                      <h6 class="mb-0 text-uppercase" style="font-size: 0.8rem;"><i class="bi bi-check-circle"></i> Banhos Realizados</h6>
+                  </div>
+                  <h3 class="mb-0 fw-bold">{{ total_presentes }}</h3>
+              </div>
+          </div>
+      </div>
+      <div class="col-md-6 mb-2">
+          <div class="card bg-danger text-white border-0 shadow-sm">
+              <div class="card-body py-2 d-flex justify-content-between align-items-center">
+                  <div>
+                      <h6 class="mb-0 text-uppercase" style="font-size: 0.8rem;"><i class="bi bi-x-circle"></i> Faltas do Dia</h6>
+                  </div>
+                  <h3 class="mb-0 fw-bold">{{ total_faltas }}</h3>
+              </div>
+          </div>
+      </div>
+  </div>
+
+  <div class="row">
+    {% for a in atendimentos %}
+      <div class="col-lg-4 col-md-6 mb-4">
+        <div class="card h-100 shadow-sm border-2 {% if a.status_presenca == 'Presente' %}border-success{% else %}border-danger{% endif %}">
+          <div class="card-header {% if a.status_presenca == 'Presente' %}bg-success-subtle text-success-emphasis{% else %}bg-danger-subtle text-danger-emphasis{% endif %}">
+            <i class="bi {% if a.status_presenca == 'Presente' %}bi-check-circle-fill{% else %}bi-x-circle-fill{% endif %}"></i>
+            <strong> {{ a.status_presenca | upper }}</strong>
+          </div>
+          
+          <div class="card-body">
+            
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                    <h5 class="mb-0">{{ a.cliente.nome_pet }}</h5>
+                    <p class="text-muted mb-0 small">{{ a.cliente.nome_tutor }}</p>
+                </div>
+                
+                {% if a.status_presenca == 'Faltou' %}
+                    {% set msg_falta = "Olá " ~ a.cliente.nome_tutor ~ ", tudo bem? Sentimos a falta do(a) " ~ a.cliente.nome_pet ~ " hoje no banho! 😢 Aconteceu algum imprevisto? Vamos reagendar para ele(a) não perder o ritmo de limpeza?" %}
+                    <a href="https://wa.me/55{{ a.cliente.telefone | replace(' ', '') | replace('-', '') | replace('(', '') | replace(')', '') }}?text={{ msg_falta | replace(' ', '%20') }}" 
+                       target="_blank" class="btn btn-danger btn-sm rounded-circle shadow-sm" title="Avisar no WhatsApp" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;">
+                       <i class="bi bi-whatsapp"></i>
+                    </a>
+                {% endif %}
+            </div>
+
+            <hr class="mt-2 mb-3">
+            
+            <p class="mb-1"><strong>Serviço:</strong> {{ a.nome_servico }}</p>
+            <p class="mb-0"><strong>Origem:</strong>
+              <span class="badge {% if a.pacote_id %}bg-primary-custom{% else %}bg-info text-dark{% endif %}">{{ 'Pacote' if a.pacote_id else 'Avulso' }}</span>
+            </p>
+            
+            {% if a.observacao %}
+            <div class="mt-3 p-2 bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded small">
+                <strong><i class="bi bi-exclamation-triangle"></i> Obs:</strong> {{ a.observacao }}
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    {% else %}
+        <div class="col-12 text-center py-5">
+            <i class="bi bi-calendar-x text-muted" style="font-size: 3rem;"></i>
+            <h4 class="mt-3 text-muted">Nenhum histórico encontrado para esta data.</h4>
+        </div>
+    {% endfor %}
+  </div>
+{% endblock %}

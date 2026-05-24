@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+{% block title %}Despesas — Family Pet Shop{% endblock %}
+{% block content %}
+
+<div class="container-fluid py-4">
+
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+        <div>
+            <h1 class="h3 fw-semibold text-brand-blue mb-1">Controle de Gastos</h1>
+            <p class="text-secondary fw-medium mb-0" style="font-size: 0.95rem;">Acompanhamento de despesas de {{ mes_ano_titulo }}</p>
+        </div>
+        <div>
+            <a href="{{ url_for('financeiro.nova_despesa') }}" class="btn btn-primary-custom rounded-pill shadow-sm fw-medium px-4">
+                <i class="bi bi-plus-lg me-1"></i> Nova Despesa
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-xl-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100" style="background-color: #0c233f;">
+                <div class="card-body p-4 d-flex flex-column justify-content-center">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-white-50 fw-medium">Saída Total no Período</span>
+                        <div class="bg-white bg-opacity-10 p-2 rounded-circle">
+                            <i class="bi bi-wallet2 fs-5 text-white"></i>
+                        </div>
+                    </div>
+                    <h2 class="fw-semibold text-white mb-0">- R$ {{ total_geral|float|currency }}</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-8">
+            <div class="row g-3 h-100">
+                {% for label, value in [('Petshop', total_petshop), ('Casa', total_casa), ('Letícia', total_leticia), ('Eduarda', total_eduarda)] %}
+                <div class="col-6 col-md-3">
+                    <div class="card bg-white border-0 shadow-sm rounded-4 h-100">
+                        <div class="card-body p-3 text-center d-flex flex-column justify-content-center">
+                            <span class="text-secondary small fw-medium mb-1">{{ label }}</span>
+                            <h5 class="fw-semibold text-danger mb-0">R$ {{ value|float|currency }}</h5>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="card bg-white border-0 shadow-sm rounded-4 mb-5">
+        <div class="card-body p-3 p-md-4">
+            <form method="GET" action="{{ url_for('financeiro.despesas') }}" id="form-filtros-despesas">
+                <input type="hidden" name="filtro" value="{{ filtro_ativo or '' }}">
+                
+                <div class="row g-3 align-items-center">
+                    <div class="col-md-5">
+                        <div class="input-group bg-light rounded-pill border-0 px-2">
+                            <span class="input-group-text bg-transparent border-0 text-muted"><i class="bi bi-search"></i></span>
+                            <input type="text" name="q" class="form-control bg-transparent border-0 shadow-none text-dark fw-medium" placeholder="Buscar despesa..." value="{{ query or '' }}">
+                            <button type="submit" class="btn btn-primary-custom" type="submit"><i class="bi bi-search"></i></button>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12 col-md-7 d-flex flex-wrap gap-2 justify-content-md-end align-items-center">
+                        <span class="text-secondary small fw-medium me-1">Período:</span>
+                        <select name="mes" class="form-select form-select-sm bg-light border-0 rounded-pill text-dark fw-medium ps-3" style="width: 120px; cursor: pointer;" onchange="document.getElementById('form-filtros-despesas').submit()">
+                            
+                            {% for i in range(1,13) %}
+                                <option value="{{ i }}" {% if i == mes_selecionado %}selected{% endif %}>Mês {{ "%02d"|format(i) }}</option>
+                            {% endfor %}
+                        </select>
+                        <select name="ano" class="form-select form-select-sm bg-light border-0 rounded-pill text-dark fw-medium ps-3" style="width: 100px; cursor: pointer;" onchange="document.getElementById('form-filtros-despesas').submit()">
+                            {% for ano in anos %}
+                                <option value="{{ ano }}" {% if ano == ano_selecionado %}selected{% endif %}>{{ ano }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </form>
+
+            <div class="d-flex flex-wrap gap-2 mt-3 pt-3 border-top align-items-center">
+                <span class="text-secondary small fw-medium me-2"><i class="bi bi-tags me-1"></i>Categorias:</span>
+                {% for f, label in [(None,'Todas'), ('PETSHOP','Petshop'), ('CASA','Casa'), ('LETICIA','Letícia'), ('EDUARDA','Eduarda')] %}
+                <a href="{{ url_for('financeiro.despesas', mes=mes_selecionado, ano=ano_selecionado, filtro=f or '', q=query) }}"
+                   class="badge rounded-pill px-3 py-2 fw-medium text-decoration-none transition-all hover-solid {% if filtro_ativo == f %}bg-primary-custom text-white shadow-sm{% else %}bg-light text-secondary border border-light{% endif %}">
+                    {{ label }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        {% for despesa in despesas %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card bg-white border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4 d-flex flex-column">
+                    
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <span class="badge bg-light text-secondary border border-secondary-subtle rounded-pill fw-medium px-3 py-1">{{ despesa.tipo }}</span>
+                        
+                        <div class="dropdown">
+                            <button class="btn btn-link text-secondary p-0 shadow-none" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-three-dots-vertical fs-5"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end border-0 shadow rounded-4 py-2">
+                                <li>
+                                    <a class="dropdown-item small fw-medium text-dark" href="{{ url_for('financeiro.editar_despesa', despesa_id=despesa.id) }}">
+                                        <i class="bi bi-pencil me-2 text-primary-custom"></i> Editar Despesa
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider opacity-10"></li>
+                                <li>
+                                    <form action="{{ url_for('financeiro.excluir_despesa', despesa_id=despesa.id) }}" method="POST" class="m-0 p-0">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="dropdown-item small fw-medium text-danger" onclick="return confirm('Tem certeza que deseja excluir esta despesa?')">
+                                            <i class="bi bi-trash me-2"></i> Excluir
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <h6 class="fw-semibold text-brand-blue mb-1" style="line-height: 1.4;">{{ despesa.descricao }}</h6>
+                    <p class="text-secondary small fw-medium mb-3"><i class="bi bi-calendar2-event me-1"></i>{{ despesa.data.strftime('%d/%m/%Y') }}</p>
+
+                    <div class="mt-auto border-top pt-3 text-end">
+                        <h4 class="text-danger fw-semibold mb-0">- R$ {{ despesa.valor|float|currency }}</h4>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12 py-5 text-center">
+            <div class="empty-state d-flex flex-column align-items-center justify-content-center p-5 bg-white rounded-4 shadow-sm border-0">
+                <div class="bg-light rounded-circle d-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                    <i class="bi bi-receipt text-muted" style="font-size: 2rem;"></i>
+                </div>
+                <h5 class="text-dark fw-semibold mb-1">Nenhuma despesa encontrada</h5>
+                <p class="text-secondary mb-0">Nenhum gasto registrado para os filtros ou mês selecionado.</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+
+<style>
+.hover-solid:hover {
+    filter: brightness(0.95);
+}
+/* Evita o contorno padrão azul do Bootstrap nos inputs limpos */
+.form-control:focus, .form-select:focus {
+    box-shadow: none !important;
+    outline: none !important;
+}
+.dropdown-item:active, .dropdown-item:hover {
+    background-color: #f8f9fa;
+}
+</style>
+{% endblock %}

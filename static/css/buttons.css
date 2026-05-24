@@ -1,0 +1,119 @@
+/* ==========================================================
+   BUTTONS.CSS — Variantes de botões da marca
+   ========================================================== */
+
+/* --- Azul (primary) --- */
+.btn-primary-custom {
+    background-color: var(--brand-blue);
+    border-color: var(--brand-blue);
+    color: #fff;
+    transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+.btn-primary-custom:hover {
+    background-color: #0c233f;
+    border-color: #0c233f;
+    color: #fff;
+}
+.btn-outline-primary-custom {
+    color: var(--brand-blue);
+    border-color: var(--brand-blue);
+}
+.btn-outline-primary-custom:hover {
+    background-color: var(--brand-blue);
+    color: #fff;
+}
+
+/* --- Laranja --- */
+.btn-orange-custom {
+    background-color: var(--brand-orange);
+    border-color: var(--brand-orange);
+    color: #fff;
+    transition: background-color var(--transition-fast);
+}
+.btn-orange-custom:hover {
+    background-color: #e58226;
+    border-color: #e58226;
+    color: #fff;
+}
+.btn-outline-orange-custom {
+    color: var(--brand-orange);
+    border-color: var(--brand-orange);
+}
+.btn-outline-orange-custom:hover {
+    background-color: var(--brand-orange);
+    color: #fff;
+}
+
+/* --- Verde --- */
+.btn-green-custom {
+    background-color: var(--brand-green);
+    border-color: var(--brand-green);
+    color: #fff;
+}
+.btn-green-custom:hover {
+    background-color: #4cb71e;
+    border-color: #4cb71e;
+    color: #fff;
+}
+.btn-outline-green-custom {
+    color: var(--brand-green);
+    border-color: var(--brand-green);
+}
+.btn-outline-green-custom:hover {
+    background-color: var(--brand-green);
+    color: #fff;
+}
+
+/* --- Vermelho --- */
+.btn-red-custom {
+    background-color: var(--brand-red);
+    border-color: var(--brand-red);
+    color: #fff;
+}
+.btn-red-custom:hover {
+    background-color: #b92525;
+    border-color: #b92525;
+    color: #fff;
+}
+.btn-outline-red-custom {
+    color: var(--brand-red);
+    border-color: var(--brand-red);
+}
+.btn-outline-red-custom:hover {
+    background-color: var(--brand-red);
+    color: #fff;
+}
+
+/* --- Botão flutuante WhatsApp --- */
+.floating-whatsapp-container-fixed {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+.floating-btn-front {
+    background-color: #25d366;
+    color: white;
+    border-radius: var(--radius-pill);
+    padding: 10px 20px;
+    text-decoration: none;
+    font-weight: bold;
+    box-shadow: var(--shadow-md);
+    transition: transform var(--transition-fast);
+    z-index: 1001;
+}
+.floating-btn-front:hover {
+    transform: scale(1.05);
+    color: white;
+}
+.floating-mascote-behind {
+    width: 120px;
+    position: absolute;
+    bottom: 20px;
+    right: 35px;
+    z-index: -1;
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
+}

@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% block title %}Editar Despesa — Family Pet Shop{% endblock %}
+{% block content %}
+
+<div class="container-fluid py-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1 text-gray-800 fw-semibold">Editar Despesa</h1>
+            <p class="text-secondary fw-medium mb-0" style="font-size: 0.95rem;">Modifique os detalhes desta saída de caixa</p>
+        </div>
+        <a href="{{ url_for('financeiro.despesas') }}" class="btn btn-light rounded-pill px-4 text-secondary border shadow-sm fw-medium">
+            <i class="bi bi-x-lg me-1"></i> Cancelar
+        </a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card bg-white border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-body p-4 p-md-5">
+                    
+                    <form method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <div class="mb-4 pb-3 border-bottom">
+                            <label class="form-label text-secondary fw-medium small mb-3 d-block"><i class="bi bi-tags me-1"></i>Categoria da Despesa</label>
+                            <div class="d-flex flex-wrap gap-2">
+                                {% for val, lbl, icn in [('PETSHOP', 'Petshop', 'bi-shop'), ('CASA', 'Casa', 'bi-house'), ('LETICIA', 'Letícia', 'bi-person'), ('EDUARDA', 'Eduarda', 'bi-person-hearts')] %}
+                                    <input type="radio" class="btn-check" name="tipo" id="tipo_{{ val }}" value="{{ val }}" {% if despesa.tipo == val %}checked{% endif %} autocomplete="off">
+                                    <label class="btn btn-outline-categoria rounded-pill fw-medium px-4 py-2 transition-all" for="tipo_{{ val }}">
+                                        <i class="bi {{ icn }} me-1"></i> {{ lbl }}
+                                    </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="descricao" class="form-label text-secondary fw-medium small">Descrição</label>
+                            <input type="text" id="descricao" name="descricao" class="form-control form-control-lg bg-light border-0 text-dark fs-6" placeholder="Ex: Conta de luz, Fornecedor de Ração, Internet..." value="{{ despesa.descricao }}" required>
+                        </div>
+
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-6">
+                                <label for="data" class="form-label text-secondary fw-medium small">Data de Pagamento</label>
+                                <input type="date" id="data" name="data" class="form-control form-control-lg bg-light border-0 text-dark fs-6" value="{{ despesa.data.strftime('%Y-%m-%d') }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="valor" class="form-label text-secondary fw-medium small">Valor (R$)</label>
+                                <div class="input-group input-group-lg bg-light rounded-3">
+                                    <span class="input-group-text bg-transparent border-0 text-muted fw-medium pe-1">R$</span>
+                                    <input type="text" id="valor" name="valor" class="form-control bg-transparent border-0 text-dark fs-6 ps-1" placeholder="0,00" value="{{ '%.2f'|format(despesa.valor)|replace('.', ',') }}" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-end mt-5">
+                            <button type="submit" class="btn btn-primary-custom btn-lg px-5 rounded-pill shadow-sm fw-medium">
+                                Salvar Alterações <i class="bi bi-check2 ms-1"></i>
+                            </button>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<style>
+/* Remove o contorno azul do Bootstrap ao clicar */
+.form-control:focus {
+    box-shadow: none !important;
+    outline: none !important;
+    background-color: #eef1f5 !important;
+}
+
+/* Estilo personalizado para os botões de rádio (Categorias) */
+.btn-outline-categoria {
+    color: #6c757d;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+}
+
+.btn-outline-categoria:hover {
+    background-color: #e2e6ea;
+    color: #495057;
+}
+
+/* Quando a categoria é selecionada, ela ganha a cor principal do sistema */
+.btn-check:checked + .btn-outline-categoria {
+    background-color: #0c233f !important; /* Cor Brand Blue */
+    color: white !important;
+    border-color: #0c233f !important;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+</style>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Máscara de dinheiro idêntica à de nova despesa
+    if(document.getElementById('valor') && window.IMask) {
+        IMask(document.getElementById('valor'), {
+            mask: 'num',
+            blocks: { 
+                num: { 
+                    mask: Number, 
+                    scale: 2, 
+                    thousandsSeparator: '.', 
+                    padFractionalZeros: true, 
+                    radix: ',' 
+                } 
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

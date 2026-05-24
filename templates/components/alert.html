@@ -1,0 +1,49 @@
+{# =============================================================
+   components/alert.html — Alertas e mensagens flash
+   
+   Uso:
+   {% from 'components/alert.html' import flash_messages, alert %}
+   {{ flash_messages() }}
+   {{ alert('info', 'Mensagem de teste', icon='bi-info-circle-fill') }}
+   ============================================================= #}
+
+{% macro flash_messages() %}
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        {% set is_html = (category == 'success_wa') %}
+        {% if category == 'success' %}
+          {% set cls = 'alert-orange-custom' %}
+        {% elif category == 'success_wa' %}
+          {% set cls = 'alert-success-custom d-flex justify-content-between align-items-center' %}
+        {% elif category == 'danger' %}
+          {% set cls = 'alert-danger-custom' %}
+        {% else %}
+          {% set cls = 'alert-info' %}
+        {% endif %}
+        <div class="alert {{ cls }} alert-dismissible fade show" role="alert">
+          {{ message | safe if is_html else message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+{% endmacro %}
+
+
+{% macro alert(type='info', message='', icon='', dismissible=false) %}
+  {% if type == 'gold' %}
+    {% set cls = 'custom-blue-alert' %}
+  {% elif type == 'warning' %}
+    {% set cls = 'alert-warning alert-warning-custom' %}
+  {% else %}
+    {% set cls = 'alert-' ~ type %}
+  {% endif %}
+  <div class="alert {{ cls }} {{ 'alert-dismissible fade show' if dismissible }}" role="alert">
+    {% if icon %}<i class="bi {{ icon }}"></i> {% endif %}
+    {{ message | safe }}
+    {% if dismissible %}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+    {% endif %}
+  </div>
+{% endmacro %}

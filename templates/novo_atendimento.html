@@ -1,0 +1,253 @@
+{% extends 'base.html' %}
+{% block title %}Novo Atendimento — Family Pet Shop{% endblock %}
+{% block content %}
+<div class="container-fluid py-4">
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1 text-gray-800 fw-semibold">Registrar Atendimento</h1>
+        <p class="text-muted mb-0" style="font-size: 0.95rem;">Agende banho, tosa ou avulsos</p>
+    </div>
+    <a href="{{ url_for('agenda.agenda_do_dia') }}" class="btn btn-light rounded-pill px-4 text-secondary border shadow-sm fw-medium">
+        <i class="bi bi-x-lg me-1"></i> Cancelar
+    </a>
+  </div>
+
+  <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+            <div id="alerta-pendencia" class="alert alert-danger border-0 shadow-sm rounded-4 mb-4" style="display: none;">
+                <div class="d-flex align-items-center p-2">
+                    <i class="bi bi-exclamation-circle text-danger fs-2 me-3"></i>
+                    <div>
+                        <h6 class="fw-semibold text-danger mb-1">Atenção: Cliente com pendência financeira</h6>
+                        <p class="mb-0 text-dark small">Este tutor possui um débito em aberto no valor de <strong id="valor-pendencia">R$ 0,00</strong>. (+ 10 dias). Deseja prosseguir?</p>
+                    </div>
+                </div>
+            </div>
+
+            <ul class="nav nav-pills nav-fill mb-4 gap-3" id="pills-tab">
+                <li class="nav-item">
+                    <button type="button" class="nav-link active rounded-pill fw-medium border shadow-sm" data-bs-toggle="pill" data-bs-target="#pills-avulso">
+                    <i class="bi bi-cash me-1"></i> Atendimento Avulso
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button type="button" class="nav-link rounded-pill fw-medium border shadow-sm" data-bs-toggle="pill" data-bs-target="#pills-pacote">
+                    <i class="bi bi-box-seam me-1"></i> Usar Crédito de Pacote
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content">
+                
+                <div class="tab-pane fade show active" id="pills-avulso">
+                    <div class="card shadow-sm border-0 rounded-4 mb-4">
+                        <div class="card-body p-4">
+                            <input type="hidden" name="tipo_atendimento" value="avulso">
+                            
+                            <div class="mb-4">
+                                <label for="cliente_id_avulso" class="form-label text-secondary fw-medium" style="font-size: 0.9rem;">Selecione o Cliente (Pet)</label>
+                                <select name="cliente_id" id="cliente_id_avulso" class="form-select form-select-lg select-com-busca bg-light border-0 text-dark" style="width:100%;">
+                                    <option></option>
+                                    {% for c in clientes %}
+                                        <option value="{{ c.id }}" data-divida="{{ c.total_divida or 0 }}">
+                                            {{ c.nome_tutor }} (Pet: {{ c.nome_pet }})
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="row g-4 mb-4">
+                                <div class="col-md-5">
+                                    <label for="data" class="form-label text-secondary fw-medium" style="font-size: 0.9rem;">Data do Atendimento</label>
+                                    <input type="date" id="data" name="data" class="form-control form-control-lg bg-light border-0 text-dark">
+                                </div>
+                                <div class="col-md-7">
+                                    <label class="form-label text-secondary fw-medium mb-3 d-block" style="font-size: 0.9rem;">Tipo de Serviço</label>
+                                    <div class="d-flex gap-4">
+                                        {% for val, lbl in [('Banho','Banho'),('Tosa','Tosa')] %}
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="servico" id="servico_{{ val }}" value="{{ val }}" {% if loop.first %}checked{% endif %} style="transform: scale(1.2);">
+                                            <label class="form-check-label text-dark fw-medium ms-1" for="servico_{{ val }}">{{ lbl }}</label>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row g-4 mb-3">
+                                <div class="col-md-5">
+                                    <label for="preco" class="form-label text-secondary fw-medium" style="font-size: 0.9rem;">Preço (R$)</label>
+                                    <input type="text" name="preco" id="preco" class="form-control form-control-lg bg-light border-0 text-dark money-mask" placeholder="0,00">
+                                </div>
+                                <div class="col-md-7">
+                                    <label for="obs_avulso" class="form-label text-secondary fw-medium" style="font-size: 0.9rem;">Observações</label>
+                                    <input type="text" name="obs_avulso" id="obs_avulso" class="form-control form-control-lg bg-light border-0 text-dark" placeholder="Opcional">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="pills-pacote">
+                    <div class="card shadow-sm border-0 rounded-4 mb-4">
+                        <div class="card-body p-4">
+                            <input type="hidden" name="tipo_atendimento" value="pacote" disabled>
+                            
+                            <div class="mb-4">
+                                <label for="pacote_id" class="form-label text-secondary fw-medium" style="font-size: 0.9rem;">Pacote Ativo</label>
+                                <select name="pacote_id" id="pacote_id" class="form-select form-select-lg bg-light border-0 text-dark">
+                                    <option value="" disabled selected>-- Escolha um pacote --</option>
+                                    {% for p in pacotes %}
+                                        <option value="{{ p.id }}" data-divida="{{ p.cliente.total_divida or 0 }}">
+                                            {{ p.cliente.nome_tutor }} — {{ p.nome_servico }} ({{ p.creditos_usados }}/{{ p.creditos_totais }})
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <div id="creditos-info" class="badge bg-primary-custom rounded-pill mt-3 px-3 py-2 fw-medium d-none" style="font-size: 0.9rem;"></div>
+                            </div>
+
+                            <div class="row g-4 mb-3">
+                                <div class="col-md-5">
+                                    <label for="data_pacote" class="form-label text-secondary fw-medium" style="font-size: 0.9rem;">Data do Atendimento</label>
+                                    <input type="date" id="data_pacote" name="data_pacote" class="form-control form-control-lg bg-light border-0 text-dark">
+                                </div>
+                                <div class="col-md-7">
+                                    <label for="obs_pacote" class="form-label text-secondary fw-medium" style="font-size: 0.9rem;">Observações</label>
+                                    <input type="text" name="obs_pacote" id="obs_pacote" class="form-control form-control-lg bg-light border-0 text-dark" placeholder="Opcional">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="text-end mb-5">
+                <button type="submit" class="btn btn-primary-custom btn-lg px-5 shadow-sm rounded-pill fw-medium">
+                    Registrar Atendimento <i class="bi bi-check2 ms-1"></i>
+                </button>
+            </div>
+
+        </div>
+    </div>
+  </form>
+</div>
+<style>
+  /* Força a aba ativa a usar a cor do seu sistema em vez do azul do Bootstrap */
+  .nav-pills .nav-link.active, 
+  .nav-pills .show > .nav-link {
+      background-color: #0c233f !important; /* Seu azul escuro */
+      color: #ffffff !important;
+      border-color: #0c233f !important;
+  }
+
+  /* Define a cor do texto da aba quando ela NÃO está selecionada */
+  .nav-pills .nav-link:not(.active) {
+      color: #6c757d; /* Um cinza elegante (text-secondary) */
+  }
+
+  /* Efeito de hover (quando passa o mouse) na aba inativa */
+  .nav-pills .nav-link:not(.active):hover {
+      background-color: #f8f9fa;
+      color: #0c233f;
+  }
+  </style>
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const pacotesInfo = {{ pacotes_info|tojson }};
+  const avulsoTab  = document.querySelector('[data-bs-target="#pills-avulso"]');
+  const pacoteTab  = document.querySelector('[data-bs-target="#pills-pacote"]');
+  const avulsoPane = document.getElementById('pills-avulso');
+  const pacotePane = document.getElementById('pills-pacote');
+
+  // LÓGICA DE ABAS (Ativar/Desativar inputs)
+  function setPane(active, inactive) {
+    active.querySelectorAll('input,select,textarea').forEach(e => e.disabled = false);
+    inactive.querySelectorAll('input,select,textarea').forEach(e => e.disabled = true);
+  }
+
+  // ALERTA DE DÍVIDA
+  
+  const alerta = document.getElementById('alerta-pendencia');
+  const displayValor = document.getElementById('valor-pendencia');
+
+  function verificarDivida(dividaValue) {
+      const divida = parseFloat(dividaValue) || 0;
+      if (divida > 0) {
+          const valorFormatado = divida.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+          displayValor.textContent = valorFormatado;
+          alerta.style.display = 'flex'; 
+      } else {
+          alerta.style.display = 'none'; 
+      }
+  }
+
+  // Controle da Aba Avulso
+  avulsoTab.addEventListener('shown.bs.tab', () => {
+      setPane(avulsoPane, pacotePane);
+      const sel = document.getElementById('cliente_id_avulso');
+      const opt = sel.options[sel.selectedIndex];
+      verificarDivida(opt ? opt.getAttribute('data-divida') : 0);
+  });
+
+  // Controle da Aba Pacote
+  pacoteTab.addEventListener('shown.bs.tab',  () => {
+      setPane(pacotePane, avulsoPane);
+      const sel = document.getElementById('pacote_id');
+      const opt = sel.options[sel.selectedIndex];
+      verificarDivida(opt ? opt.getAttribute('data-divida') : 0);
+  });
+
+  // Listener para mudança no Select de Avulso (compatível com jQuery Select2)
+  const checkJq = setInterval(() => {
+      if (window.jQuery) {
+          window.jQuery('#cliente_id_avulso').on('change', function() {
+              const opt = this.options[this.selectedIndex];
+              verificarDivida(opt ? opt.getAttribute('data-divida') : 0);
+          });
+          clearInterval(checkJq);
+      }
+  }, 500);
+
+  // Listener para mudança no Select de Pacote
+  document.getElementById('pacote_id').addEventListener('change', function() {
+    // 1. Atualiza Créditos Restantes
+    const info = pacotesInfo[this.value];
+    const infoDiv = document.getElementById('creditos-info');
+    if(info) {
+        infoDiv.innerHTML = `<i class="bi bi-info-circle me-1"></i> Créditos restantes: <strong>${info.totais - info.usados} de ${info.totais}</strong>`;
+        infoDiv.classList.remove('d-none');
+    } else {
+        infoDiv.classList.add('d-none');
+    }
+
+    // 2. Atualiza Alerta de Dívida
+    const opt = this.options[this.selectedIndex];
+    verificarDivida(opt ? opt.getAttribute('data-divida') : 0);
+  });
+
+  // Máscara de Moeda (Mantida do seu código)
+  if(document.getElementById('preco') && window.IMask) {
+      IMask(document.getElementById('preco'), {
+        mask: 'R$ num',
+        blocks: { num: { mask: Number, scale: 2, thousandsSeparator: '.', padFractionalZeros: true, radix: ',' } }
+      });
+  }
+
+  // Inicializa o Select2
+  $(document).ready(function() {
+    $('.select-com-busca').select2({ placeholder: 'Digite para pesquisar...', allowClear: true });
+    setPane(avulsoPane, pacotePane);
+  });
+});
+</script>
+{% endblock %}

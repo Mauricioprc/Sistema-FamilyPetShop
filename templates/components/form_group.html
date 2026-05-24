@@ -1,0 +1,45 @@
+{# =============================================================
+   components/form_group.html — Campo de formulário genérico
+   
+   Uso:
+   {% from 'components/form_group.html' import form_group %}
+   {{ form_group(id='nome_tutor', label='Nome Completo', type='text',
+                 required=true, feedback='O nome é obrigatório.') }}
+   ============================================================= #}
+
+{% macro form_group(id, label, type='text', name=None, required=false,
+                    placeholder='', feedback='Campo obrigatório.',
+                    value='', extra_class='', rows=3) %}
+  <div class="mb-3">
+    <label for="{{ id }}" class="form-label">{{ label }}:</label>
+
+    {% if type == 'textarea' %}
+      <textarea id="{{ id }}"
+                name="{{ name or id }}"
+                class="form-control {{ extra_class }}"
+                rows="{{ rows }}"
+                placeholder="{{ placeholder }}"
+                {{ 'required' if required }}>{{ value }}</textarea>
+
+    {% elif type == 'select' %}
+      {# Bloco select deve ser passado via caller() #}
+      <select id="{{ id }}"
+              name="{{ name or id }}"
+              class="form-select clean-input {{ extra_class }}"
+              {{ 'required' if required }}>
+        {{ caller() }}
+      </select>
+
+    {% else %}
+      <input type="{{ type }}"
+             id="{{ id }}"
+             name="{{ name or id }}"
+             class="form-control clean-input {{ extra_class }}"
+             value="{{ value }}"
+             placeholder="{{ placeholder }}"
+             {{ 'required' if required }}>
+    {% endif %}
+
+    <div class="invalid-feedback">{{ feedback }}</div>
+  </div>
+{% endmacro %}

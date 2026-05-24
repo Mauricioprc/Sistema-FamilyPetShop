@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Solicitar Agendamento | Family Pet Shop</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+
+  {# === HEADER COMEMORATIVO 10 ANOS === #}
+  <header class="header-comemorativo">
+    <div class="container">
+      <img src="{{ url_for('static', filename='Design sem nome.jpg') }}"
+           alt="Family Pet Shop 10 Anos" class="logo-10-anos" loading="lazy">
+    </div>
+  </header>
+
+  {# === DATA-ATTRIBUTES para URLs de imagens (usadas no JS via Financeiro) === #}
+  <span id="mascote_dog_src" data-src="{{ url_for('static', filename='mascote_dog.png') }}" hidden></span>
+  <span id="mascote_cat_src" data-src="{{ url_for('static', filename='mascote_cat.png') }}" hidden></span>
+
+  <div class="container pb-5">
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+
+        <div class="text-center mb-4">
+          <h1 class="mt-3">Solicite Seu Agendamento</h1>
+          <p class="lead text-muted">Preencha os dados e escolha a data preferida. É rápido!</p>
+        </div>
+
+        <div class="card shadow-lg p-3 p-md-5">
+
+          {# === INDICADOR DE PASSOS === #}
+          <div class="step-indicator">
+            {% for num, label in [('1','Tutor'),('2','Pet'),('3','Serviços'),('4','Agendar'),('5','Finalizar')] %}
+            <div class="step-item {% if loop.first %}active{% endif %}" id="step-{{ num }}-indicator">
+              {% if not loop.first %}<div class="step-line"></div>{% endif %}
+              <div class="step-circle">{{ num }}</div>
+              <span class="step-label">{{ label }}</span>
+            </div>
+            {% endfor %}
+          </div>
+
+          <form id="agendamento-form" method="POST" novalidate>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            {# ================================================================ #}
+            {# PASSO 1 — DADOS DO TUTOR                                         #}
+            {# ================================================================ #}
+            <div class="form-step" id="step-1">
+              <h4 class="section-title text-center mb-4">Seus Dados</h4>
+
+              <div class="mb-3">
+                <label for="nome_tutor" class="form-label">Nome Completo do Tutor:</label>
+                <input type="text" id="nome_tutor" name="nome_tutor"
+                       class="form-control clean-input" required>
+                <div class="invalid-feedback">O nome do tutor é obrigatório.</div>
+              </div>
+
+              <div class="mb-3">
+                <label for="telefone" class="form-label">Telefone (WhatsApp):</label>
+                <input type="text" id="telefone" name="telefone"
+                       class="form-control clean-input"
+                       placeholder="(XX) XXXXX-XXXX" required>
+                <div class="invalid-feedback">O telefone é obrigatório para combinarmos o agendamento.</div>
+              </div>
+            </div>
+
+            {# ================================================================ #}
+            {# PASSO 2 — DETALHES DO PET                                        #}
+            {# ================================================================ #}
+            <div class="form-step d-none" id="step-2">
+              <h4 class="section-title text-center mb-4">Detalhes do Seu Pet</h4>
+
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="nome_pet" class="form-label">Nome do Pet:</label>
+                  <input type="text" id="nome_pet" name="nome_pet"
+                         class="form-control clean-input" required>
+                  <div class="invalid-feedback">O nome do pet é obrigatório.</div>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="raca_pet" class="form-label">Raça do Pet:</label>
+                  <input list="racas_populares" name="raca_pet" id="raca_pet"
+                         class="form-control clean-input" required>
+                  <datalist id="racas_populares">
+                    <option value="Sem Raça Definida (SRD)">
+                    <option value="Shih Tzu"><option value="Poodle">
+                    <option value="Golden Retriever"><option value="Bulldog Francês">
+                    <option value="Spitz Alemão (Lulu)"><option value="Yorkshire Terrier">
+                    <option value="Labrador"><option value="Beagle">
+                    <option value="Pinscher"><option value="Dachshund (Salsicha)">
+                    <option value="Persa"><option value="Siamês">
+                    <option value="Maine Coon"><option value="Ragdoll"><option value="Bengal">
+                  </datalist>
+                  <div class="invalid-feedback">Por favor, informe a raça do seu pet.</div>
+                </div>
+              </div>
+
+              {# Tipo do Pet #}
+              <div class="mb-4 text-center">
+                <label class="section-title d-block mb-3">Tipo de Pet:</label>
+                <div class="d-inline-flex justify-content-center gap-3 icon-selector" id="tipo_pet_selector">
+                  <div class="text-center">
+                    <input type="radio" id="tipo_pet_cao" name="tipo_pet" value="Cão" required>
+                    <label for="tipo_pet_cao" class="icon-option">
+                      <div class="icon-circle">
+                        <img src="{{ url_for('static', filename='mascote_dog.png') }}"
+                             alt="Cachorro" class="pet-icon-custom" loading="lazy">
+                      </div>
+                      Cachorro
+                    </label>
+                  </div>
+                  <div class="text-center">
+                    <input type="radio" id="tipo_pet_gato" name="tipo_pet" value="Gato">
+                    <label for="tipo_pet_gato" class="icon-option">
+                      <div class="icon-circle">
+                        <img src="{{ url_for('static', filename='mascote_cat.png') }}"
+                             alt="Gato" class="pet-icon-custom" loading="lazy">
+                      </div>
+                      Gato
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {# Sexo e Castrado #}
+              <div class="row mb-4 minimal-radio-group">
+                <div class="col-md-6">
+                  <label class="section-title d-block mb-3">Sexo:</label>
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="sexo_pet" id="sexo_macho" value="Macho" required>
+                    <label class="form-check-label" for="sexo_macho">Macho</label>
+                  </div>
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="sexo_pet" id="sexo_femea" value="Fêmea">
+                    <label class="form-check-label" for="sexo_femea">Fêmea</label>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <label class="section-title d-block mb-3">Castrado?</label>
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="castrado" id="castrado_sim" value="Sim" required>
+                    <label class="form-check-label" for="castrado_sim">Sim</label>
+                  </div>
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="castrado" id="castrado_nao" value="Não">
+                    <label class="form-check-label" for="castrado_nao">Não</label>
+                  </div>
+                </div>
+              </div>
+
+              {# Peso #}
+              <div class="mb-5">
+                <label for="peso_pet" class="form-label section-title d-block mb-3">Peso do Pet (kg):</label>
+                <div class="p-3 border rounded">
+                  <input type="number" id="peso_valor" name="peso_pet_manual"
+                         class="form-control clean-input mb-4"
+                         value="10" min="1" max="50" required>
+                  <input type="range" id="peso_pet" name="peso_pet"
+                         class="form-range" min="1" max="50" step="1" value="10" required>
+                </div>
+              </div>
+
+              {# Temperamento #}
+              <div class="mb-4">
+                <label for="temperamento" class="form-label section-title d-block mb-3">Temperamento:</label>
+                <select name="temperamento" id="temperamento"
+                        class="form-select clean-input" required>
+                  <option value="" disabled selected>-- Selecione o Temperamento do Pet --</option>
+                  <option value="Manso">Manso</option>
+                  <option value="Bravo">Bravo</option>
+                </select>
+                <div class="invalid-feedback">O temperamento é obrigatório.</div>
+              </div>
+            </div>
+
+            {# ================================================================ #}
+            {# PASSO 3 — SERVIÇOS                                               #}
+            {# ================================================================ #}
+            <div class="form-step d-none" id="step-3">
+              <h4 class="section-title text-center mb-4">Escolha o Serviço</h4>
+
+              {# Serviço principal #}
+              <div class="mb-4">
+                <label class="section-title d-block mb-3">Serviço Principal:</label>
+                <div class="row g-3 text-center minimal-radio-group service-card-group" id="servico_selector">
+
+                  {% set servicos = [
+                    ('servico_banho',    'Banho',                   'Banho.png',         '35.00'),
+                    ('servico_higiene',  'Banho & Tosa Higiênica',  'tosa_higenica.png', '45.00'),
+                    ('servico_maquina',  'Banho & Tosa Máquina',    'Tosa_maquina.png',  '60.00'),
+                    ('servico_tesoura',  'Banho & Tosa Tesoura',    'tosa_tesoura.png',  '85.00')
+                  ] %}
+                  {% for id, label, img, price in servicos %}
+                  <div class="col-6 col-md-3">
+                    <input type="radio" class="btn-check" name="nome_servico"
+                           id="{{ id }}" value="{{ label }}"
+                           data-base-price="{{ price }}"
+                           {% if loop.first %}required{% endif %} autocomplete="off">
+                    <label class="btn btn-outline-primary w-100 py-3 service-card-main" for="{{ id }}">
+                      <div class="service-icon-box">
+                        <img src="{{ url_for('static', filename=img) }}"
+                             alt="{{ label }}" class="service-img-main" loading="lazy">
+                      </div>
+                      {{ label }}
+                    </label>
+                  </div>
+                  {% endfor %}
+
+                </div>
+              </div>
+
+              <hr class="my-4">
+
+              {# Adicionais #}
+              <h4 class="section-title d-block mb-3">Serviços Adicionais (Opcionais)</h4>
+              <div class="row g-3 text-center mb-4 minimal-optional-group" id="adicionais_selector">
+                <div class="col-6 col-md-4">
+                  <input type="checkbox" class="btn-check" name="adicionais"
+                         id="adicional_escovacao" value="Escovação de Dentes"
+                         data-adicional-price="10.00" autocomplete="off">
+                  <label class="btn btn-outline-secondary w-100 py-3 optional-card-mini" for="adicional_escovacao">
+                    <img src="{{ url_for('static', filename='dente.png') }}"
+                         alt="Escovação de Dentes" class="optional-img-mini" loading="lazy"><br>Escovação
+                  </label>
+                </div>
+                <div class="col-6 col-md-4">
+                  <input type="checkbox" class="btn-check" name="adicionais"
+                         id="adicional_hidratacao" value="Hidratação"
+                         data-adicional-price="15.00" autocomplete="off">
+                  <label class="btn btn-outline-secondary w-100 py-3 optional-card-mini" for="adicional_hidratacao">
+                    <img src="{{ url_for('static', filename='Hidrata.png') }}"
+                         alt="Hidratação" class="optional-img-mini" loading="lazy"><br>Hidratação
+                  </label>
+                </div>
+              </div>
+
+              {# Transporte #}
+              <h4 class="section-title d-block mb-3">Como seu pet chegará até nós?</h4>
+              <div class="row g-3 justify-content-center mb-4" id="transporte_selector">
+                <div class="col-6 col-md-4">
+                  <input type="radio" class="btn-check" name="transporte"
+                         id="transporte_cliente" value="Eu vou levar" checked autocomplete="off">
+                  <label class="btn btn-outline-primary w-100 py-3 service-card-main d-flex flex-column align-items-center" for="transporte_cliente">
+                    <div class="service-icon-box">
+                      <img src="{{ url_for('static', filename='mulher.png') }}"
+                           alt="Vou Levar" class="service-img-main" loading="lazy">
+                    </div>
+                    <span class="fw-bold">Vou Levar</span>
+                  </label>
+                </div>
+                <div class="col-6 col-md-4">
+                  <input type="radio" class="btn-check" name="transporte"
+                         id="transporte_taxi" value="Táxi Dog"
+                         data-taxi-price="15.00" autocomplete="off">
+                  <label class="btn btn-outline-primary w-100 py-3 service-card-main d-flex flex-column align-items-center" for="transporte_taxi">
+                    <div class="service-icon-box">
+                      <img src="{{ url_for('static', filename='van.png') }}"
+                           alt="Táxi Dog" class="service-img-main" loading="lazy">
+                    </div>
+                    <span class="fw-bold">Táxi Dog</span>
+                  </label>
+                </div>
+              </div>
+
+              {# Endereço (aparece só com Táxi Dog) #}
+              <div id="endereco_container" class="mb-4 d-none">
+                <label for="endereco_busca" class="form-label section-title d-block mb-2">Endereço para Busca e Entrega:</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-white border-gold">
+                    <i class="bi bi-geo-alt-fill text-orange-custom"></i>
+                  </span>
+                  <input type="text" name="endereco_busca" id="endereco_busca"
+                         class="form-control clean-input"
+                         placeholder="Rua, número, bairro...">
+                </div>
+              </div>
+
+              {# Observações #}
+              <h4 class="section-title d-block mb-3">Observações (Opcional)</h4>
+              <div class="mb-3">
+                <textarea name="observacao" id="observacao" class="form-control"
+                          rows="3" placeholder="Detalhes importantes sobre o pet ou o serviço"></textarea>
+              </div>
+
+              {# Preço estimado #}
+              <div class="card shadow-sm p-3 mt-4 text-center bg-light">
+                <p class="section-title mb-1">Preço Total Estimado:</p>
+                <h3 class="text-orange-custom fw-bold" id="preco_calculado">R$ 0,00</h3>
+                <input type="hidden" name="preco" id="preco_final" value="0.00">
+                <small class="text-muted">Valor pode mudar conforme o porte e condições do pelo.</small>
+              </div>
+            </div>
+
+            {# ================================================================ #}
+            {# PASSO 4 — AGENDAMENTO                                            #}
+            {# ================================================================ #}
+            <div class="form-step d-none" id="step-4">
+
+              {# Card de resumo #}
+              <div class="card shadow-sm mb-4 border-0 resumo-servico-card-custom">
+                <div class="card-body d-flex justify-content-between align-items-center p-3">
+                  <div class="d-flex align-items-center">
+                    <span id="resumo-icone-pet" style="margin-right:15px;"></span>
+                    <div>
+                      <h5 class="card-title mb-0" id="resumo-nome-pet">Pet</h5>
+                      <small class="text-muted" id="resumo-nome-servico">Serviço</small>
+                    </div>
+                  </div>
+                  <span class="badge bg-orange-custom p-2 fs-5" id="resumo-preco">R$ 0,00</span>
+                </div>
+              </div>
+
+              <h4 class="section-title text-center mb-4">Selecione a Data</h4>
+
+              {# Calendário visual #}
+              <div class="card p-3 shadow-sm mb-4">
+                <div class="calendar-header-mockup">
+                  <i class="bi bi-chevron-left" id="prev-month"></i>
+                  <span id="current-month-year">Carregando...</span>
+                  <i class="bi bi-chevron-right" id="next-month"></i>
+                </div>
+                <div class="calendar-grid-mockup" id="calendar-days"></div>
+              </div>
+
+              <input type="date" id="data" name="data"
+                     class="form-control clean-input visually-hidden"
+                     required min="{{ hoje }}">
+
+              <div id="data-selecionada-display" class="alert alert-light text-center mt-3" style="display:none;">
+                Data selecionada: <strong></strong>
+              </div>
+
+              <div id="horario-container" class="mt-3" style="display:none;">
+                <label for="horario_preferido" class="form-label section-title d-block mb-2">Horário Preferencial:</label>
+                <select name="horario_preferido" id="horario_preferido"
+                        class="form-select clean-input" required>
+                  <option value="" disabled selected>-- Escolha um horário --</option>
+                  <option value="08:00">08:00</option>
+                  <option value="11:00">11:00</option>
+                  <option value="15:00">15:00</option>
+                </select>
+                <div class="invalid-feedback">Por favor, selecione um horário.</div>
+              </div>
+
+              <div class="alert custom-blue-alert mt-4" role="alert">
+                <i class="bi bi-info-circle-fill"></i>
+                Essa é uma solicitação de agendamento. Aguarde a confirmação pelo seu WhatsApp.
+              </div>
+            </div>
+
+            {# ================================================================ #}
+            {# PASSO 5 — REVISÃO E ENVIO                                        #}
+            {# ================================================================ #}
+            <div class="form-step d-none" id="step-5">
+              <div class="text-center mb-4">
+                <h4 class="section-title">Confirmação dos Detalhes</h4>
+                <p class="text-muted">Revise as informações antes de enviar.</p>
+              </div>
+
+              {# Ticket de revisão #}
+              <div class="modern-ticket">
+                <div class="ticket-row">
+                  <div class="ticket-col">
+                    <span class="ticket-label">Tutor</span>
+                    <div class="ticket-value" id="review-nome-tutor"></div>
+                    <small class="text-muted" id="review-telefone"></small>
+                  </div>
+                  <div class="ticket-col text-end">
+                    <span class="ticket-label">Pet</span>
+                    <div class="ticket-value" id="review-nome-pet-full"></div>
+                    <small class="text-muted">
+                      <span id="review-tipo-sexo"></span> •
+                      <span id="review-peso"></span>
+                    </small>
+                  </div>
+                </div>
+
+                <div class="ticket-divider"></div>
+
+                <div class="ticket-row">
+                  <div class="ticket-col">
+                    <span class="ticket-label">Serviço Escolhido</span>
+                    <div class="ticket-value" id="review-servico-principal"></div>
+                    <div class="ticket-extras" id="review-adicionais"></div>
+                  </div>
+                </div>
+
+                <div class="ticket-divider"></div>
+
+                <div class="ticket-row">
+                  <div class="ticket-col">
+                    <span class="ticket-label">Agenda</span>
+                    <div class="ticket-value">
+                      <i class="bi bi-calendar3"></i>
+                      <span id="review-data-preferencial"></span>
+                    </div>
+                  </div>
+                  <div class="ticket-col text-end">
+                    <span class="ticket-label">Transporte</span>
+                    <div class="ticket-value" id="review-transporte"></div>
+                  </div>
+                </div>
+
+                <div class="ticket-divider"></div>
+
+                <div class="text-center">
+                  <span class="ticket-label">Total Estimado</span>
+                  <div id="review-preco-total">R$ 0,00</div>
+                  <small class="text-muted">Sujeito a avaliação presencial do pelo</small>
+                </div>
+
+                <button type="button" class="btn-edit-ticket" onclick="goToStep(1)">
+                  <i class="bi bi-pencil"></i> Ajustar informações
+                </button>
+              </div>
+
+              {# Aviso importante #}
+              <div class="alert alert-warning mt-4" role="alert">
+                <h6 class="alert-heading fw-bold">
+                  <i class="bi bi-exclamation-triangle-fill"></i> Aviso Importante!
+                </h6>
+                <p>Esta é apenas uma <strong>SOLICITAÇÃO</strong>. Seu agendamento e valores serão confirmados pelo nosso time em até 24 horas.</p>
+                <p class="mb-0">Caso não entremos em contato, envie mensagem para: <strong>(35) 9.8851-7297</strong>.</p>
+              </div>
+
+              {# Checkbox de ciência #}
+              <div class="confirmation-wrapper mt-3">
+                <div class="form-check custom-checkbox-gold">
+                  <input class="form-check-input" type="checkbox" id="check-ciencia" required>
+                  <label class="form-check-label ms-2" for="check-ciencia">
+                    Declaro que li os detalhes acima e estou ciente que o agendamento está sujeito a confirmação via WhatsApp.
+                  </label>
+                </div>
+              </div>
+
+              <div class="text-center mt-4">
+                <button type="submit" id="btn-finalizar"
+                        class="btn btn-orange-custom btn-lg"
+                        disabled style="opacity:0.5;cursor:not-allowed;">
+                  <i class="bi bi-send-fill"></i> Enviar Solicitação Final
+                </button>
+              </div>
+            </div>
+
+            {# === CONTROLES DE NAVEGAÇÃO === #}
+            <div class="d-flex justify-content-between mt-4">
+              <button type="button" class="btn btn-secondary" id="prev-btn" style="visibility:hidden;">
+                <i class="bi bi-arrow-left"></i> Anterior
+              </button>
+              <button type="button" class="btn" id="next-btn">
+                Próximo <i class="bi bi-arrow-right"></i>
+              </button>
+            </div>
+
+            <div class="text-center mt-3">
+              <a href="{{ url_for('publico.links_insta') }}" class="btn btn-link text-muted">
+                <i class="bi bi-house"></i> Voltar para o Início
+              </a>
+            </div>
+
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# === SCRIPTS === #}
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://unpkg.com/imask"></script>
+
+  {# Utilitários (ordem importa: dependências antes) #}
+  <script src="{{ url_for('static', filename='js/utils/formatter.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/utils/validator.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/utils/api.js') }}"></script>
+
+  {# Módulos de negócio #}
+  <script src="{{ url_for('static', filename='js/modules/agenda.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/modules/pacotes.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/modules/clientes.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/modules/financeiro.js') }}"></script>
+
+  {# Orquestrador principal #}
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+</body>
+</html>

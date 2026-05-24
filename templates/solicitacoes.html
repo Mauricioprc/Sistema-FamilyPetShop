@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+{% block title %}Solicitações — Family Pet Shop{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h1 class="fw-bold text-brand-blue mb-1">Solicitações Online</h1>
+            <p class="text-muted mb-0">Gerencie os pedidos de agendamento recebidos pelo site.</p>
+        </div>
+        <a href="{{ url_for('agenda.agenda_do_dia') }}" class="btn btn-outline-primary-custom border-2 fw-bold">
+            <i class="bi bi-calendar3 me-2"></i> Ver Agenda
+        </a>
+    </div>
+
+    <div class="row g-4">
+        {% for atendimento in solicitacoes %}
+        <div class="col-12 col-md-6 col-xl-4">
+            <div class="card h-100 card-solicitacao shadow-sm border-0">
+                <div class="card-body p-4 d-flex flex-column">
+                    
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="me-3">
+                            {% if atendimento.cliente.tipo_pet|lower == 'gato' %}
+                                <img src="{{ url_for('static', filename='mascote_cat.png') }}" alt="Gato" style="width: 50px; height: 50px; object-fit: contain;">
+                            {% else %}
+                                <img src="{{ url_for('static', filename='mascote_dog.png') }}" alt="Cachorro" style="width: 50px; height: 50px; object-fit: contain;">
+                            {% endif %}
+                        </div>
+                        <div>
+                            <h5 class="fw-bold mb-0 text-brand-blue">{{ atendimento.cliente.nome_pet }}</h5>
+                            <span class="text-muted small"><i class="bi bi-person"></i> {{ atendimento.cliente.nome_tutor }}</span>
+                        </div>
+                    </div>
+
+                    <div class="row g-2 p-3 bg-light rounded-4 mb-3" style="font-size: 0.85rem;">
+                        <div class="col-6">
+                            <span class="d-block text-muted small text-uppercase">Raça / Sexo</span>
+                            <span class="fw-bold">{{ atendimento.cliente.raca_pet or 'N/I' }} ({{ atendimento.cliente.sexo_pet or 'N/I' }})</span>
+                        </div>
+                        <div class="col-3">
+                            <span class="d-block text-muted small text-uppercase">Peso</span>
+                            <span class="fw-bold">{{ atendimento.cliente.peso_pet or '0' }}kg</span>
+                        </div>
+                        <div class="col-3">
+                            <span class="d-block text-muted small text-uppercase">Castrado</span>
+                            <span class="fw-bold">{{ atendimento.cliente.castrado or 'N/I' }}</span>
+                        </div>
+                        <div class="col-12 mt-2 border-top pt-2">
+                            <span class="d-block text-muted small text-uppercase">Temperamento</span>
+                            <span class="fw-bold">{{ atendimento.cliente.temperamento or 'Não informado' }}</span>
+                        </div>
+                    </div>
+
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="fw-bold text-brand-orange" style="font-size: 1.1rem;">
+                                <i class="bi bi-scissors me-1"></i> {{ atendimento.nome_servico }}
+                            </span>
+                            <span class="fw-bold text-success" style="font-size: 20px;">R$ {{ "%.2f"|format(atendimento.preco)|replace('.', ',') }}</span>
+                        </div>
+
+                        {% if atendimento.adicionais %}
+                        <div class="mb-3">
+                                <span class="badge border w-100 text-start py-2" style="color: #e58226; border-color: #000000 ;">
+                                <i class="bi bi-plus-circle me-1"></i> Extras: {{ atendimento.adicionais }}
+                            </span>
+                        </div>
+                        {% endif %}
+
+                        <div class="p-2 border rounded-3 small">
+                            <p class="mb-1"><i class="bi bi-calendar-event me-2"></i><strong>Sugerido:</strong> {{ atendimento.data.strftime('%d/%m/%Y') }} - {{ atendimento.horario_preferido or 'A combinar' }}</p>
+                            <p class="mb-0 {% if atendimento.transporte == 'Táxi Dog' %} {% endif %}">
+                                <i class="bi bi-truck fw-bold me-2"></i><strong>Transporte:</strong> {{ atendimento.transporte }}
+                            </p>
+                            {% if atendimento.transporte == 'Táxi Dog' and atendimento.endereco_busca %}
+                                <div class="mt-1  small fw-bold">
+                                    <i class="bi bi-geo-alt-fill"></i> {{ atendimento.endereco_busca }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2 mt-4">
+                        <button class="btn btn-primary-custom flex-grow-1 fw-bold py-2 shadow-sm" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#modalConfirmar-{{ atendimento.id }}">
+                            <i class="bi bi-whatsapp me-1"></i> Confirmar
+                        </button>
+                        <button class="btn btn-outline-danger btn-recusar-acao px-3" 
+                                data-url="{{ url_for('publico.recusar_solicitacao', atendimento_id=atendimento.id) }}">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="modalConfirmar-{{ atendimento.id }}" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow">
+                    <form action="{{ url_for('publico.confirmar_solicitacao', atendimento_id=atendimento.id) }}" class="form-confirmar-final">
+                        <div class="modal-header bg-success text-white border-0">
+                            <h5 class="modal-title fw-bold">Confirmar Agendamento</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body p-4">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small text-uppercase">Data Final:</label>
+                                <input type="date" name="data" class="form-control" value="{{ atendimento.data.strftime('%Y-%m-%d') }}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small text-uppercase">Preço Final (R$):</label>
+                                <input type="text" name="preco" class="form-control preco-mask" value="{{ "%.2f"|format(atendimento.preco)|replace('.', ',') }}" required>
+                            </div>
+                            <div class="mb-0">
+                                <label class="form-label fw-bold small text-uppercase">Observações :</label>
+                                <textarea name="observacao" class="form-control" rows="3" placeholder="Ex: Pet agitado...">{{ atendimento.observacao }}</textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0 p-4 pt-0">
+                            <button type="button" class="btn btn-light fw-bold" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-success px-4 fw-bold">CONFIRMAR E AVISAR CLIENTE</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12 text-center py-5">
+            <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+            <p class="text-muted mt-2">Nenhuma solicitação pendente.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // 1. Máscara de preço
+  document.querySelectorAll('.preco-mask').forEach(input => {
+    IMask(input, { 
+      mask: 'R$ num', 
+      blocks: { num: { mask: Number, scale: 2, thousandsSeparator: '.', padFractionalZeros: true, radix: ',' } } 
+    });
+  });
+
+  // 2. Lógica de Confirmação (AJAX)
+  document.querySelectorAll('.form-confirmar-final').forEach(form => {
+    form.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const submitBtn = this.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Processando...';
+
+      try {
+        const res = await fetch(this.action, { method: 'POST', body: new FormData(this) });
+        const data = await res.json();
+        if (data.success) { 
+          window.open(data.whatsapp_url, '_blank'); 
+          location.reload(); 
+        } else {
+          alert('Erro: ' + (data.message || 'Erro desconhecido'));
+          submitBtn.disabled = false;
+          submitBtn.innerText = 'CONFIRMAR E AVISAR CLIENTE';
+        }
+      } catch (err) {
+        alert('Erro na comunicação com o servidor.');
+        submitBtn.disabled = false;
+      }
+    });
+  });
+
+  // 3. Lógica de Recusa
+  document.querySelectorAll('.btn-recusar-acao').forEach(btn => {
+    btn.addEventListener('click', async function() {
+      if (confirm('Deseja recusar esta solicitação e avisar o cliente?')) {
+        try {
+            const res = await fetch(this.dataset.url, { method: 'POST' });
+            const data = await res.json();
+            if (data.success) { 
+              window.open(data.whatsapp_url, '_blank'); 
+              location.reload(); 
+            }
+        } catch (err) {
+            alert('Erro ao processar recusa.');
+        }
+      }
+    });
+  });
+});
+</script>
+{% endblock %}

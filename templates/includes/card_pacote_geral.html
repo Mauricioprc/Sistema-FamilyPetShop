@@ -1,0 +1,97 @@
+<div class="card mb-3 shadow-sm rounded-4">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center">
+      <h5 class="card-title mb-0">{{ pacote.creditos_totais }}x {{ pacote.nome_servico }}</h5>
+      {% if pacote.status == 'Ativo' %}
+          <span class="badge bg-success rounded-pill">{{ pacote.status }}</span>
+      {% else %}
+          <span class="badge bg-secondary rounded-pill">{{ pacote.status }}</span>
+      {% endif %}
+    </div>
+
+    <p class="card-subtitle mt-2 mb-1"><strong>Pet:</strong> {{ pacote.cliente.nome_pet }}</p>
+    <p class="card-subtitle mb-2 text-muted">Tutor: {{ pacote.cliente.nome_tutor }}</p>
+
+    <small class="text-muted">
+      {% if pacote.data_inicio %} Início: {{ pacote.data_inicio.strftime('%d/%m/%Y') }} | {% endif %}
+      Valor: R$ {{ "%.2f"|format(pacote.preco_pacote)|replace('.', ',') }}
+    </small>
+    
+    <p class="card-text mt-2 mb-1">
+      Créditos: <strong>{{ pacote.creditos_usados }} de {{ pacote.creditos_totais }}</strong>
+    </p>
+    <div class="progress" style="height: 10px; border-radius: 5px;">
+      <div class="progress-bar" role="progressbar" style="width: {{ (pacote.creditos_usados / pacote.creditos_totais) * 100 }}%; background-color: #0c233f"></div>
+    </div>
+
+    <div class="mt-3 d-flex justify-content-between align-items-center">
+      
+      <div>
+        {% if pacote.status_pagamento == 'Pendente' %}
+            {% if pacote.data_vencimento %}
+                {% if pacote.data_vencimento < hoje %}
+                    <span class="badge" style="background-color: #fd7e14; color: white;" title="Pagamento Atrasado">
+                        <i class="bi bi-exclamation-circle"></i> Vencido: {{ pacote.data_vencimento.strftime('%d/%m/%Y') }}
+                    </span>
+                {% else %}
+                    <span class="badge bg-primary-custom" title="Dentro do Prazo">
+                        <i class="bi bi-calendar-event"></i> Vence em: {{ pacote.data_vencimento.strftime('%d/%m/%Y') }}
+                    </span>
+                {% endif %}
+            {% else %}
+                <span class="badge" style="background-color: #fd7e14; color: white;">Pendente (Aguardando Data)</span>
+            {% endif %}
+        {% else %}
+             <span class="badge bg-secondary"><i class="bi bi-check-circle"></i> Pago</span>
+        {% endif %}
+      </div>
+
+      <div class="d-flex gap-2 align-items-center">
+        <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#editarPacote-geral-{{pacote.id}}">
+          <i class="bi bi-pencil"></i> 
+        </button>
+
+        <form action="{{ url_for('pacotes.excluir', pacote_id=pacote.id) }}" method="POST" class="m-0" onsubmit="return confirm('Tem certeza que deseja excluir este pacote?')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-link btn-sm text-danger p-0" title="Excluir Pacote">
+                <i class="bi bi-trash fs-5"></i>
+            </button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="editarPacote-geral-{{pacote.id}}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 rounded-4 shadow">
+      <form action="{{ url_for('pacotes.editar', pacote_id=pacote.id) }}" method="POST">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="modal-header border-0">
+            <h5 class="modal-title fw-bold">Editar Pacote</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+              <div class="mb-3">
+                <label class="form-label">Nome do Serviço</label>
+                <input type="text" name="nome_servico" class="form-control" value="{{ pacote.nome_servico }}" required>
+              </div>
+              <div class="row">
+                <div class="col-6 mb-3">
+                    <label class="form-label">Créditos Totais</label>
+                    <input type="number" name="creditos_totais" class="form-control" value="{{ pacote.creditos_totais }}" min="{{ pacote.creditos_usados }}" required>
+                </div>
+                <div class="col-6 mb-3">
+                    <label class="form-label">Preço (R$)</label>
+                    <input type="text" name="preco_pacote" class="form-control money-mask" value="{{ "%.2f"|format(pacote.preco_pacote)|replace('.', ',') }}" required>
+                </div>
+              </div>
+          </div>
+          <div class="modal-footer border-0">
+            <button type="submit" class="btn btn-primary-custom w-100 rounded-pill">Salvar Alterações</button>
+          </div>
+      </form>
+    </div>
+  </div>
+</div>

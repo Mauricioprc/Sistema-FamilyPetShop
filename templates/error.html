@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}Erro {{ status_code }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center mt-5">
+  <div class="col-md-6">
+    <div class="alert alert-danger">
+      <h2 class="alert-heading">Erro {{ status_code }}</h2><hr>
+      <p><strong>{{ titulo }}</strong></p>
+      <p>{{ mensagem }}</p><hr>
+      <a href="/" class="btn btn-primary-custom">Voltar ao início</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

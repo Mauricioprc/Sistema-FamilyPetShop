@@ -1,0 +1,296 @@
+{% extends 'base.html' %}
+{% block title %}Vender Pacote — Family Pet Shop{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1 text-gray-800 fw-semibold">Novo Pacote</h1>
+            <p class="text-muted mb-0" style="font-size: 0.95rem;">Preencha os dados abaixo por etapas</p>
+        </div>
+        <a href="{{ url_for('pacotes.listar') }}" class="btn btn-light rounded-pill px-4 text-secondary border shadow-sm">
+            <i class="bi bi-x-lg me-1"></i> Cancelar
+        </a>
+    </div>
+
+    <form id="form-novo-pacote" method="POST" action="{{ url_for('pacotes.novo') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <input type="hidden" name="datas_agendadas" id="datas_agendadas" value="">
+        
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+
+                <div id="alerta-pendencia" class="alert alert-danger border-0 shadow-sm rounded-4 mb-4" style="display: none;">
+                    <div class="d-flex align-items-center p-2">
+                        <i class="bi bi-exclamation-octagon-fill fs-1 text-danger me-3"></i>
+                        <div>
+                            <h5 class="fw-bold text-danger mb-1">Atenção! Cliente possui pendência financeira</h5>
+                            <p class="mb-0 text-dark">Este tutor possui um débito em aberto no valor de <strong id="valor-pendencia" class="fs-5">R$ 0,00</strong>. (+ 10 dias). Tem certeza que deseja vender um novo pacote?</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm border-0 rounded-4 mb-4">
+                    <div class="card-header bg-white border-bottom-0 pt-4 pb-0 px-4">
+                        <h6 class="fw-semibold text-dark"><span class="badge bg-light text-secondary border rounded-circle me-2">1</span> Identificação</h6>
+                    </div>
+                    <div class="card-body p-4">
+                        <label for="cliente_id" class="form-label text-secondary fw-medium" style="font-size: 0.9rem;">Selecione o Tutor e o Pet</label>
+                        <select name="cliente_id" id="cliente_id" class="form-select form-select-lg select-com-busca bg-light border-0 text-dark" style="width:100%;" required>
+                            <option value="">Clique para buscar um cliente...</option>
+                            {% for c in clientes %}
+                                <option value="{{ c.id }}" data-divida="{{ c.total_divida or 0 }}">
+                                    {{ c.nome_tutor }} (Pet: {{ c.nome_pet }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm border-0 rounded-4 mb-4">
+                    <div class="card-header bg-white border-bottom-0 pt-4 pb-0 px-4">
+                        <h6 class="fw-semibold text-dark"><span class="badge bg-light text-secondary border rounded-circle me-2">2</span> Valores e Serviço</h6>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <label class="form-label text-secondary fw-medium" style="font-size: 0.9rem;">Nome do Serviço</label>
+                                <input type="text" name="nome_servico" class="form-control form-control-lg bg-light border-0" placeholder="Ex: Banho" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label text-secondary fw-medium" style="font-size: 0.9rem;">Créditos (Qtd)</label>
+                                <input type="number" name="creditos_totais" id="creditos_totais" class="form-control form-control-lg bg-light border-0" value="4" min="1" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label text-secondary fw-medium" style="font-size: 0.9rem;">Valor Total (R$)</label>
+                                <input type="text" name="preco_pacote" id="preco_pacote" class="form-control form-control-lg bg-light border-0 money-mask" placeholder="0,00" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm border-0 rounded-4 mb-4">
+                    <div class="card-header bg-white border-bottom-0 pt-4 pb-0 px-4">
+                        <h6 class="fw-semibold text-dark"><span class="badge bg-light text-secondary border rounded-circle me-2">3</span> Agendamento Automático</h6>
+                    </div>
+                    <div class="card-body p-4">
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label for="data_inicio" class="form-label text-secondary fw-medium" style="font-size: 0.9rem;">
+                                    <i class="bi bi-calendar-event me-1 text-primary-custom"></i> Data de Início
+                                </label>
+                                <input type="date" name="data_inicio" id="data_inicio" class="form-control form-control-lg bg-light border-0" required>
+                            </div>
+                        </div>
+                        <label class="form-label small fw-bold text-secondary"><i class="bi bi-arrow-repeat me-1"></i> Frequência do Pacote</label>
+                        <div class="d-flex gap-4 mb-4 flex-wrap border p-3 rounded-4 bg-light shadow-sm">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="tipo_agendamento" id="tipo_semanal" value="semanal" onchange="toggleCamposAgendamento()" checked>
+                                <label class="form-check-label fw-medium" for="tipo_semanal">Semanal</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="tipo_agendamento" id="tipo_quinzenal" value="quinzenal" onchange="toggleCamposAgendamento()">
+                                <label class="form-check-label fw-medium" for="tipo_quinzenal">Quinzenal</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="tipo_agendamento" id="tipo_seguidos" value="seguidos" onchange="toggleCamposAgendamento()">
+                                <label class="form-check-label fw-medium text-primary-custom" for="tipo_seguidos">Dias Múltiplos / Seguidos</label>
+                            </div>
+                        </div>
+
+                        <div id="campos-agendamento" class="row">
+                            <div class="col-md-6" id="campo-dia-unico">
+                                <label class="form-label small fw-bold text-secondary">Qual o dia da semana?</label>
+                                <select id="dia_semana" name="dia_semana" class="form-select rounded-3 shadow-sm border-0 bg-light">
+                                    <option value="0">Segunda-feira</option>
+                                    <option value="1">Terça-feira</option>
+                                    <option value="2">Quarta-feira</option>
+                                    <option value="3">Quinta-feira</option>
+                                    <option value="4">Sexta-feira</option>
+                                    <option value="5">Sábado</option>
+                                    <option value="6">Domingo</option>
+                                </select>
+                            </div>
+
+                            <div class="col-12 d-none" id="campo-dias-multiplos">
+                                <label class="form-label small fw-bold text-secondary">Quais dias da semana? (Marque quantos quiser)</label>
+                                <div class="d-flex flex-wrap gap-3 p-3 bg-white rounded-3 shadow-sm border">
+                                    <div class="form-check"><input class="form-check-input dia-multiplo border-secondary" type="checkbox" value="0" id="d0"><label class="form-check-label" for="d0">Seg</label></div>
+                                    <div class="form-check"><input class="form-check-input dia-multiplo border-secondary" type="checkbox" value="1" id="d1"><label class="form-check-label" for="d1">Ter</label></div>
+                                    <div class="form-check"><input class="form-check-input dia-multiplo border-secondary" type="checkbox" value="2" id="d2"><label class="form-check-label" for="d2">Qua</label></div>
+                                    <div class="form-check"><input class="form-check-input dia-multiplo border-secondary" type="checkbox" value="3" id="d3"><label class="form-check-label" for="d3">Qui</label></div>
+                                    <div class="form-check"><input class="form-check-input dia-multiplo border-secondary" type="checkbox" value="4" id="d4"><label class="form-check-label" for="d4">Sex</label></div>
+                                    <div class="form-check"><input class="form-check-input dia-multiplo border-secondary" type="checkbox" value="5" id="d5"><label class="form-check-label" for="d5">Sáb</label></div>
+                                    <div class="form-check"><input class="form-check-input dia-multiplo border-secondary" type="checkbox" value="6" id="d6"><label class="form-check-label" for="d6">Dom</label></div>
+                                </div>
+                                <small class="text-muted mt-2 d-block"><i class="bi bi-info-circle text-primary"></i> As datas serão agendadas sequencialmente nesses dias da semana até que os créditos do pacote acabem.</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-end mb-5">
+                    <button type="button" id="btn-salvar-pacote" class="btn btn-primary-custom btn-lg px-5 shadow-sm rounded-pill fw-medium">
+                        Finalizar Venda <i class="bi bi-check2 ms-1"></i>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="modal fade" id="modalConfirmarAgendamentos" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 rounded-4 shadow">
+      <div class="modal-header border-0 pb-0">
+        <h6 class="modal-title fw-semibold">Confirmar Datas?</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-secondary small mb-3">Os atendimentos serão criados nestas datas:</p>
+        <div id="lista-datas-agendadas" class="list-group list-group-flush small rounded-3 border"></div>
+      </div>
+      <div class="modal-footer border-0">
+        <button type="button" class="btn btn-light rounded-pill px-4 text-secondary fw-medium" data-bs-dismiss="modal">Corrigir</button>
+        <button type="button" class="btn btn-primary-custom rounded-pill px-4 shadow-sm fw-medium" onclick="document.getElementById('form-novo-pacote').submit()">Confirmar Venda</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // 1. ALERTA DE PENDÊNCIA
+    const selectCliente = document.getElementById('cliente_id');
+    const alerta = document.getElementById('alerta-pendencia');
+    const displayValor = document.getElementById('valor-pendencia');
+
+    function verificarDivida() {
+        if (!selectCliente || !selectCliente.value) {
+            alerta.style.display = 'none';
+            return;
+        }
+        const option = selectCliente.options[selectCliente.selectedIndex];
+        const divida = parseFloat(option.getAttribute('data-divida')) || 0;
+        
+        if (divida > 0) {
+            const valorFormatado = divida.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            displayValor.textContent = valorFormatado;
+            alerta.style.display = 'flex'; 
+        } else {
+            alerta.style.display = 'none'; 
+        }
+    }
+
+    if(selectCliente) selectCliente.addEventListener('change', verificarDivida);
+    const checkJq = setInterval(() => {
+        if (window.jQuery && selectCliente) {
+            window.jQuery('#cliente_id').on('change', verificarDivida);
+            clearInterval(checkJq);
+        }
+    }, 500);
+
+    // 2. LÓGICA DO BOTÃO SALVAR
+    const form = document.getElementById('form-novo-pacote');
+    const btnSalvar = document.getElementById('btn-salvar-pacote');
+
+    if(btnSalvar) {
+        btnSalvar.addEventListener('click', async function(e) {
+            e.preventDefault(); 
+
+            // Validações
+            if (!selectCliente.value) { alert('Por favor, selecione um Cliente (Tutor).'); return; }
+            if (!document.querySelector('input[name="nome_servico"]').value) { alert('Por favor, digite o Nome do Serviço.'); return; }
+            if (!document.getElementById('preco_pacote').value) { alert('Por favor, informe o Valor Total do pacote.'); return; }
+            
+            // Nova validação de Data de Início
+            const inputDataInicio = document.getElementById('data_inicio');
+            if (!inputDataInicio.value) { alert('Por favor, informe a Data de Início.'); return; }
+
+            const tipoRadio = document.querySelector('input[name="tipo_agendamento"]:checked');
+            const tipo = tipoRadio ? tipoRadio.value : 'nenhum';
+
+            if (tipo === 'nenhum') {
+                form.submit();
+                return;
+            }
+
+            let diasSelecionados = [];
+            
+            if (tipo === 'seguidos') {
+                document.querySelectorAll('.dia-multiplo:checked').forEach(cb => diasSelecionados.push(cb.value));
+                if (diasSelecionados.length === 0) {
+                    alert('Por favor, selecione pelo menos um dia da semana!');
+                    return;
+                }
+            } else {
+                const diaUnico = document.getElementById('dia_semana');
+                if(diaUnico) diasSelecionados.push(diaUnico.value);
+            }
+
+            try {
+                const formData = new FormData(form);
+                formData.append('dias_selecionados', JSON.stringify(diasSelecionados));
+
+                // Garantia que os valores vão com a chave certa
+                if (!formData.has('data_inicio')) formData.append('data_inicio', inputDataInicio.value);
+                const inputCreditos = document.getElementById('creditos_totais');
+                if (inputCreditos && !formData.has('creditos_totais')) formData.append('creditos_totais', inputCreditos.value);
+
+                const res = await fetch("{{ url_for('pacotes.calcular_datas') }}", { 
+                    method: 'POST', body: formData 
+                });
+                const data = await res.json();
+                
+                if (!res.ok || !data.success) throw new Error(data.message || 'Falha ao gerar as datas.');
+                document.getElementById('datas_agendadas').value = JSON.stringify(data.datas_formatadas);
+
+                const lista = document.getElementById('lista-datas-agendadas');
+                lista.innerHTML = '';
+                data.datas_formatadas.forEach(d => {
+                    const span = document.createElement('span');
+                    span.className = 'list-group-item bg-light border-bottom border-white fw-medium text-secondary';
+                    span.innerHTML = `<i class="bi bi-calendar-check text-primary-custom me-2"></i> ${d}`;
+                    lista.appendChild(span);
+                });
+
+                if (window.bootstrap) {
+                    const modal = new bootstrap.Modal(document.getElementById('modalConfirmarAgendamentos'));
+                    modal.show();
+                } else {
+                    alert("As datas geradas são: " + data.datas_formatadas.join(", "));
+                    form.submit();
+                }
+            } catch(erro) {
+                alert('Erro no agendamento: ' + erro.message);
+            }
+        });
+    }
+});
+
+function toggleCamposAgendamento() {
+    const campos = document.getElementById('campos-agendamento');
+    const campoDiaUnico = document.getElementById('campo-dia-unico');
+    const campoDiasMultiplos = document.getElementById('campo-dias-multiplos');
+    
+    const radioSemanal = document.getElementById('tipo_semanal');
+    const radioQuinzenal = document.getElementById('tipo_quinzenal');
+    const radioSeguidos = document.getElementById('tipo_seguidos');
+    
+    if(campos) campos.classList.remove('d-none');
+
+    if ((radioSemanal && radioSemanal.checked) || (radioQuinzenal && radioQuinzenal.checked)) {
+        if(campoDiaUnico) campoDiaUnico.classList.remove('d-none');
+        if(campoDiasMultiplos) campoDiasMultiplos.classList.add('d-none');
+    } else if (radioSeguidos && radioSeguidos.checked) {
+        if(campoDiaUnico) campoDiaUnico.classList.add('d-none');
+        if(campoDiasMultiplos) campoDiasMultiplos.classList.remove('d-none');
+    }
+}
+</script>
+{% endblock %}

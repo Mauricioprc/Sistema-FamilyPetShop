@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Editar Cliente' if cliente else 'Adicionar Novo Cliente' }}{% endblock %}
+
+{% block content %}
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>{{ 'Editar Cliente' if cliente else 'Adicionar Novo Cliente' }}</h1>
+    <a href="{{ url_for('clientes.listar') }}" class="btn btn-secondary">Cancelar</a>
+  </div>
+
+  <form method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="row">
+      
+      <div class="col-lg-4 mb-4">
+        <div class="card h-100 shadow-sm border-0 rounded-4">
+          <div class="card-header bg-white border-bottom py-3">
+              <h5 class="mb-0 fw-bold text-brand-blue"><i class="bi bi-person-fill me-2"></i> Dados do Tutor</h5>
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <label for="nome_tutor" class="form-label fw-medium small text-muted">Nome do Tutor: <span class="text-danger">*</span></label>
+              <input type="text" id="nome_tutor" name="nome_tutor" class="form-control form-control-lg rounded-3" value="{{ cliente.nome_tutor if cliente else '' }}" required>
+            </div>
+            <div class="mb-3">
+              <label for="telefone" class="form-label fw-medium small text-muted">Telefone: <span class="text-danger">*</span></label>
+              <input type="text" id="telefone" name="telefone" class="form-control form-control-lg rounded-3" value="{{ cliente.telefone if cliente else '' }}" required>
+            </div>
+
+            <div class="mb-3 pt-3 border-top">
+                <label for="usa_taxi" class="form-label fw-medium small text-muted"><i class="bi bi-truck me-1"></i> Costuma usar Táxi Dog?</label>
+                <select id="usa_taxi" class="form-select rounded-3">
+                  <option value="Não">Não</option>
+                  <option value="Sim" {% if cliente and cliente.endereco %}selected{% endif %}>Sim</option>
+                </select>
+            </div>
+
+            <div class="mb-3" id="campo_endereco" style="display: {% if cliente and cliente.endereco %}block{% else %}none{% endif %};">
+                <label for="endereco" class="form-label fw-medium small text-muted">Endereço para busca: <span class="text-danger">*</span></label>
+                <textarea id="endereco" name="endereco" class="form-control rounded-3" rows="3" placeholder="Rua, Número, Bairro, Ponto de Referência...">{{ cliente.endereco if cliente else '' }}</textarea>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-8 mb-4">
+        <div class="card h-100 shadow-sm border-0 rounded-4">
+          <div class="card-header bg-white border-bottom py-3">
+              <h5 class="mb-0 fw-bold text-brand-blue"></i> Dados do Pet</h5>
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-12">
+                  <label for="nome_pet" class="form-label fw-medium small text-muted">Nome do Pet: <span class="text-danger">*</span></label>
+                  <input type="text" id="nome_pet" name="nome_pet" class="form-control rounded-3" value="{{ cliente.nome_pet if cliente else '' }}" required>
+                </div>
+                
+                <div class="col-md-6">
+                  <label for="tipo_pet" class="form-label fw-medium small text-muted">Tipo:</label>
+                  <select id="tipo_pet" name="tipo_pet" class="form-select rounded-3">
+                    <option value="">Selecione...</option>
+                    <option value="Cachorro" {% if cliente and cliente.tipo_pet == 'Cachorro' %}selected{% endif %}>Cachorro</option>
+                    <option value="Gato" {% if cliente and cliente.tipo_pet == 'Gato' %}selected{% endif %}>Gato</option>
+                    <option value="Outro" {% if cliente and cliente.tipo_pet == 'Outro' %}selected{% endif %}>Outro</option>
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label for="raca_pet" class="form-label fw-medium small text-muted">Raça:</label>
+                  <input type="text" id="raca_pet" name="raca_pet" class="form-control rounded-3" value="{{ cliente.raca_pet if cliente and cliente.raca_pet else '' }}">
+                </div>
+
+                <div class="col-md-4">
+                  <label for="sexo_pet" class="form-label fw-medium small text-muted">Sexo:</label>
+                  <select id="sexo_pet" name="sexo_pet" class="form-select rounded-3">
+                    <option value="">Selecione...</option>
+                    <option value="Macho" {% if cliente and cliente.sexo_pet == 'Macho' %}selected{% endif %}>Macho</option>
+                    <option value="Fêmea" {% if cliente and cliente.sexo_pet == 'Fêmea' %}selected{% endif %}>Fêmea</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label for="castrado" class="form-label fw-medium small text-muted">Castrado?</label>
+                  <select id="castrado" name="castrado" class="form-select rounded-3">
+                    <option value="">Selecione...</option>
+                    <option value="Sim" {% if cliente and cliente.castrado == 'Sim' %}selected{% endif %}>Sim</option>
+                    <option value="Não" {% if cliente and cliente.castrado == 'Não' %}selected{% endif %}>Não</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label for="peso_pet" class="form-label fw-medium small text-muted">Peso (kg):</label>
+                  <input type="number" step="0.1" id="peso_pet" name="peso_pet" class="form-control rounded-3" value="{{ cliente.peso_pet if cliente and cliente.peso_pet else '' }}">
+                </div>
+
+                <div class="col-md-12">
+                  <label for="temperamento" class="form-label fw-medium small text-muted">Temperamento:</label>
+                  <select id="temperamento" name="temperamento" class="form-select rounded-3">
+                    <option value="">Selecione...</option>
+                    <option value="Dócil" {% if cliente and cliente.temperamento == 'Dócil' %}selected{% endif %}>Dócil</option>
+                    <option value="Calmo" {% if cliente and cliente.temperamento == 'Calmo' %}selected{% endif %}>Calmo</option>
+                    <option value="Agitado" {% if cliente and cliente.temperamento == 'Agitado' %}selected{% endif %}>Agitado</option>
+                    <option value="Medroso" {% if cliente and cliente.temperamento == 'Medroso' %}selected{% endif %}>Medroso</option>
+                    <option value="Bravo" {% if cliente and cliente.temperamento == 'Bravo' %}selected{% endif %}>Bravo</option>
+                  </select>
+                </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="mt-2 text-end">
+      <a href="{{ url_for('clientes.listar') }}" class="btn btn-light border px-4 rounded-pill shadow-sm me-2">Cancelar</a>
+      <button type="submit" class="btn btn-primary-custom px-5 rounded-pill fw-bold shadow-sm">
+        <i class="bi bi-save me-1"></i> {{ 'Salvar Alterações' if cliente else 'Salvar Cliente' }}
+      </button>
+    </div>
+  </form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Máscara de Telefone
+    IMask(document.getElementById('telefone'), { mask: '(00) 00000-0000' });
+
+    // Lógica para mostrar/esconder o campo de endereço
+    const selectTaxi = document.getElementById('usa_taxi');
+    const campoEndereco = document.getElementById('campo_endereco');
+    const inputEndereco = document.getElementById('endereco');
+
+    selectTaxi.addEventListener('change', function() {
+        if (this.value === 'Sim') {
+            campoEndereco.style.display = 'block';
+            inputEndereco.required = true; // Passa a ser obrigatório
+        } else {
+            campoEndereco.style.display = 'none';
+            inputEndereco.required = false; // Deixa de ser obrigatório
+            inputEndereco.value = ''; // Limpa o endereço se desistir
+        }
+    });
+</script>
+{% endblock %}

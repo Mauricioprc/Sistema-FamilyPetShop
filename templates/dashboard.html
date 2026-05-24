@@ -1,0 +1,224 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard Estratégico — Family Pet Shop{% endblock %}
+
+{% block content %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="container-fluid py-4">
+    
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+            <h2 class="fw-bold mb-1" style="color: #0c233f;">Painel Estratégico</h2>
+            <p class="text-muted mb-0">Visão financeira e operacional</p>
+        </div>
+        
+        <div class="d-flex align-items-center gap-3">
+            <form method="GET" class="d-flex gap-2">
+                <select name="mes" class="form-select rounded-pill border shadow-sm">
+                    {% set meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'] %}
+                    {% for m in range(1, 13) %}
+                        <option value="{{ m }}" {% if mes_selecionado == m %}selected{% endif %}>{{ meses[m-1] }}</option>
+                    {% endfor %}
+                </select>
+                <select name="ano" class="form-select rounded-pill border shadow-sm">
+                    {% for a in range(ano_atual - 2, ano_atual + 2) %}
+                        <option value="{{ a }}" {% if ano_selecionado == a %}selected{% endif %}>{{ a }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-primary-custom rounded-pill px-3 shadow-sm">Filtrar</button>
+            </form>
+
+            <div class="dropdown">
+                <button class="btn btn-light border rounded-pill shadow-sm dropdown-toggle text-secondary" type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-link-45deg"></i> Links Públicos
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end border-0 shadow rounded-4">
+                    <li><a class="dropdown-item" href="{{ url_for('publico.links_insta') }}" target="_blank"><i class="bi bi-instagram me-2 text-danger"></i> Link da pagina </a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('publico.solicitar_agendamento') }}" target="_blank"><i class="bi bi-calendar-check me-2 text-primary"></i> Página de Agendamento</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100" style="border-left: 5px solid #0c233f !important;">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="text-secondary small fw-bold text-uppercase">Recebido Líquido</div>
+                        <div class="bg-primary-subtle  p-2 rounded-circle"><i class="bi bi-wallet2 fs-5"></i></div>
+                    </div>
+                    <h3 class="fw-bold text-dark mb-1">R$ {{ recebido_liquido }}</h3>
+                    <div class="text-muted small mt-2">
+                        <span class="d-block mb-1">Bruto: R$ {{ recebido_bruto }}</span>
+                        <span class="text-danger fw-medium"><i class="bi bi-arrow-down-short"></i> Taxas (-): R$ {{ perda_taxas }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100" style="border-left: 5px solid #0c233f !important;">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="text-secondary small fw-bold text-uppercase">Lucro (Apenas Petshop)</div>
+                        <div class="p-2 rounded-circle bg-primary-subtle" style="background-color: #e0cffc; color: #0c233f;"><i class="bi bi-shop fs-5" ></i></div>
+                    </div>
+                    <h3 class="fw-bold mb-1" style="color: #0c233f;">R$ {{ lucro_operacional }}</h3>
+                    <div class="text-muted small mt-2">
+                        <span class="d-block mb-1">Recebido Líquido (-) Custos da Loja</span>
+                        <span class="text-danger fw-medium">Gastos Loja: R$ {{ despesas_petshop }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100" style="border-left: 5px solid #0c233f !important;">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="text-secondary small fw-bold text-uppercase">Lucro Real (Geral)</div>
+                        <div class=" bg-primary-subtle p-2 rounded-circle"><i class="bi bi-piggy-bank fs-5"></i></div>
+                    </div>
+                    <h3 class="fw-bold  mb-1" style="color: #0c233f;">R$ {{ lucro_real }}</h3>
+                    <div class="text-muted small mt-2">
+                        <span class="d-block mb-1">Recebido Líquido (-) TUDO</span>
+                        <span class="text-danger fw-medium">Gastos Totais: R$ {{ todas_despesas }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100" style="border-left: 5px solid #fd7e14 !important;">
+                <div class="card-body p-4 d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-secondary small fw-bold text-uppercase mb-2">Dinheiro na Rua</div>
+                        <h3 class="fw-bold mb-1" style="color: #fd7e14;">R$ {{ dinheiro_na_rua }}</h3>
+                        <div class="text-danger small fw-medium mt-1">Valores vencidos há mais de 10 dias</div>
+                    </div>
+                    <div class="bg-orange-subtle text-orange p-3 rounded-circle">
+                        <i class="bi bi-exclamation-triangle fs-2" style="color: #fd7e14;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100" style="border-left: 5px solid #0c233f !important;">
+                <div class="card-body p-4 d-flex  justify-content-between align-items-center">
+                    <div>
+                        <div class="text-secondary small fw-bold text-uppercase mb-2">Serviços Concluídos</div>
+                        <h3 class="fw-bold text-dark mb-1">{{ servicos_concluidos }}</h3>
+                        <div class="text-muted small mt-1">
+                            <span class="badge {% if var_servicos > 0 %}bg-success-subtle text-success{% elif var_servicos < 0 %}bg-danger-subtle text-danger{% else %}bg-light text-secondary{% endif %} rounded-pill px-2">
+                                {% if var_servicos > 0 %}<i class="bi bi-arrow-up-right"></i> +{% elif var_servicos < 0 %}<i class="bi bi-arrow-down-right"></i> {% endif %}
+                                {{ var_servicos }}%
+                            </span> em relação ao mês anterior
+                        </div>
+                    </div>
+                    <div class="bg-info-subtle text-info p-3 rounded-circle" style="color: #000000;">
+                        <i class="bi bi-scissors fs-2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-white border-0 pt-4 pb-0 px-4">
+                    <h6 class="fw-bold text-brand-blue mb-0">Receita: Avulso x Pacote</h6>
+                </div>
+                <div class="card-body p-4 d-flex align-items-center justify-content-center">
+                    <canvas id="graficoAvulsoPacote" style="max-height: 250px;"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-white border-bottom py-3 px-4">
+                    <h6 class="fw-bold text-brand-blue mb-0"><i class="bi bi-radar me-2 text-danger"></i> Radar: Clientes Sumidos Recentes</h6>
+                    <small class="text-muted">Ausentes entre 30 e 45 dias</small>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light text-secondary small">
+                                <tr>
+                                    <th class="ps-4">Tutor e Pet</th>
+                                    <th>Tempo Ausente</th>
+                                    <th class="text-end pe-4">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for c in clientes_sumidos %}
+                                <tr>
+                                    <td class="ps-4">
+                                        <div class="fw-medium text-dark">{{ c.tutor }}</div>
+                                        <div class="small text-muted">Pet: {{ c.pet }}</div>
+                                    </td>
+                                    <td><span class="badge bg-dark text-white">{{ c.dias }} dias</span></td>
+                                    <td class="text-end pe-4">
+                                        <a href="{{ c.link_wpp }}" target="_blank" class="btn btn-sm btn-success rounded-pill px-3 shadow-sm">
+                                            <i class="bi bi-whatsapp"></i> Chamar
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="3" class="text-center py-4 text-muted">Nenhum cliente sumido nessa faixa (30 a 45 dias)! Tudo em dia. 🎉</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const ctxPizza = document.getElementById('graficoAvulsoPacote').getContext('2d');
+    
+    // Pegamos os valores cru (float) para o gráfico
+    const valorAvulso = {{ receita_avulso or 0 }};
+    const valorPacote = {{ receita_pacote or 0 }};
+
+    new Chart(ctxPizza, {
+        type: 'doughnut',
+        data: {
+            labels: ['Atend. Avulsos', 'Pacotes'],
+            datasets: [{
+                data: [valorAvulso, valorPacote],
+                backgroundColor: ['#e58226', '#0c233f'],
+                borderWidth: 0,
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            cutout: '70%',
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+});
+</script>
+<style>
+    .bg-orange-subtle { background-color: #ffe8d6; }
+    .text-orange { color: #fd7e14; }
+    .text-brand-blue { color: #0c233f; }
+    .btn-primary-custom { background-color: #0c233f; color: white; border: none; }
+    .btn-primary-custom:hover { background-color: #08182b; color: white; }
+</style>
+{% endblock %}

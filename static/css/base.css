@@ -1,0 +1,29 @@
+/* ==========================================================
+   BASE.CSS — Reset e estilos globais
+   ========================================================== */
+
+body {
+    background-color: #f8f9fa;
+}
+
+/* Scrollbar suave para browsers modernos */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Remove outline feio e usa o padrão de focus ring da marca */
+:focus-visible {
+    outline: 3px solid var(--brand-orange);
+    outline-offset: 2px;
+}
+
+/* Imagens responsivas por padrão */
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Lazy loading padrão para todas as imagens */
+img:not([loading]) {
+    loading: lazy;
+}

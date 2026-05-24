@@ -1,0 +1,162 @@
+/* ==========================================================
+   RESPONSIVE.CSS — Media queries e adaptações mobile-first
+   ========================================================== */
+
+/* --- Calendário visual --- */
+.calendar-display-mockup { font-family: Arial, sans-serif; color: var(--gray-4); padding: 10px; border-radius: var(--radius-sm); }
+.calendar-header-mockup {
+    background-color: var(--brand-gold) !important;
+    color: #fff !important;
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    padding: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+}
+.calendar-header-mockup i { color: #fff !important; cursor: pointer; font-size: 1.2rem; }
+.calendar-grid-mockup {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    gap: 5px;
+}
+.day-header-mockup { font-weight: bold; color: #1A1A1A; padding: 5px 0 10px; font-size: 0.8rem; }
+.day-mockup {
+    padding: 8px 0;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    font-weight: 500;
+    line-height: 1;
+    color: #1A1A1A;
+}
+.day-mockup:not(.disabled):hover { color: var(--brand-gold); background-color: #fdfaf0; }
+.day-mockup.active {
+    border: 2px solid var(--brand-gold) !important;
+    color: var(--brand-gold) !important;
+    font-weight: bold;
+    box-shadow: 0 0 5px rgba(212, 175, 55, 0.3);
+}
+.day-mockup.disabled { color: #d1d1d1 !important; cursor: not-allowed; text-decoration: line-through; }
+
+/* --- Seções da landing page --- */
+.hero-section  { background-color: #fff; padding: 5rem 0; }
+.services-gallery { background-color: var(--gray-1); }
+.location-section { background-color: #fff; padding: 3rem 0; }
+.map-container { border: 5px solid #fff; }
+.hero-logo     { height: 100px; display: block; margin: 0 auto; }
+.hero-logo-side-centered { height: 100px; }
+.hero-overlay  { display: none; }
+.hero-content  { z-index: 2; position: relative; }
+.hero-image-clean { max-width: 100%; height: auto; object-fit: cover; border-radius: 15px; box-shadow: var(--shadow-md); }
+
+/* --- Cards de serviços (galeria) --- */
+.services-gallery .card { transition: transform var(--transition-base), box-shadow var(--transition-base); }
+.services-gallery .card:hover { transform: translateY(-10px); box-shadow: var(--shadow-md); }
+
+/* --- Cards inteligentes --- */
+.card-inteligente { border-radius: 15px; box-shadow: var(--shadow-sm); }
+.icon-card { font-size: 3rem; border: 2px solid; border-radius: 50%; padding: 0.5rem; }
+
+/* --- Responsividade do hero (< 992px) --- */
+@media (max-width: 991.98px) {
+    .hero-content { text-align: center !important; }
+}
+
+/* --- Seletores de peso em telas muito pequenas --- */
+@media (max-width: 575.98px) {
+    .btn-group.w-100 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 5px;
+    }
+    .btn-group.w-100 .btn { width: 100%; }
+}
+
+/* --- Botão de envio final --- */
+#btn-finalizar, .btn-send-final {
+    display: block !important;
+    margin: 20px auto !important;
+    width: 90% !important;
+    max-width: 350px !important;
+}
+@media (min-width: 768px) {
+    #btn-finalizar, .btn-send-final { width: 60% !important; }
+}
+
+/* --- Inputs do passo 2 (alinhamento) --- */
+#step-2 .clean-input {
+    height: 50px !important;
+    display: block !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    padding: 10px 15px !important;
+}
+#step-2 input[list]::-webkit-calendar-picker-indicator { display: none !important; }
+#step-2 input { -webkit-appearance: none !important; appearance: none !important; }
+#step-2 .form-label { min-height: 24px; display: block; }
+
+/* --- Estrelas de avaliação --- */
+.rating-display i, #rating-input label i { color: var(--brand-orange) !important; }
+#rating-input .btn-check:checked + label {
+    background-color: var(--brand-orange) !important;
+    border-color: var(--brand-orange) !important;
+    color: white !important;
+}
+
+/* --- Autocomplete nos inputs --- */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px white inset !important;
+    -webkit-text-fill-color: #1A1A1A !important;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+/* --- Checkbox de confirmação final --- */
+.custom-checkbox-gold .form-check-input:checked { background-color: var(--brand-gold); border-color: var(--brand-gold); }
+.custom-checkbox-gold .form-check-input { cursor: pointer; width: 1.2em; height: 1.2em; border: 2px solid #ccc; }
+.custom-checkbox-gold .form-check-label  { cursor: pointer; font-size: 0.9rem; color: #444; line-height: 1.4; user-select: none; }
+
+/* --- Alerta de aviso --- */
+.alert-warning-custom {
+    background-color: #fffdf5;
+    border-left: 4px solid var(--brand-gold);
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.9rem;
+    border-radius: var(--radius-sm);
+}
+.confirmation-wrapper { background: #fdfdfd; padding: 15px; border-radius: 12px; border: 1px solid #f0f0f0; }
+
+/* --- Botões de navegação do wizard --- */
+#next-btn {
+    background: linear-gradient(145deg, var(--brand-gold), var(--brand-gold-dark)) !important;
+    color: #fff !important;
+    border: none !important;
+    border-radius: var(--radius-sm) !important;
+    padding: 10px 25px !important;
+    font-weight: 600 !important;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 15px rgba(184, 149, 46, 0.3) !important;
+    transition: all var(--transition-base) !important;
+}
+#next-btn:hover { transform: translateY(-2px) !important; filter: brightness(1.1); }
+#prev-btn {
+    background: transparent !important;
+    color: #666 !important;
+    border: 1px solid #ccc !important;
+    border-radius: var(--radius-sm) !important;
+    transition: all var(--transition-fast) !important;
+}
+#prev-btn:hover { background-color: var(--gray-1) !important; color: #1A1A1A !important; border-color: #1A1A1A !important; }
+
+/* --- Seletor de endereço (Táxi Dog) --- */
+.border-gold { border-color: var(--brand-gold) !important; }
+#endereco_container .input-group-text { border-right: none; }
+#endereco_container input { border-left: none; }

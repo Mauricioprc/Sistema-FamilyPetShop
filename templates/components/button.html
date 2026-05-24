@@ -1,0 +1,41 @@
+{# =============================================================
+   components/button.html — Botões reutilizáveis
+   
+   Uso:
+   {% from 'components/button.html' import btn, btn_link %}
+   {{ btn('Salvar', style='orange', icon='bi-check-lg') }}
+   {{ btn_link(url_for('agenda.historico'), 'Voltar', style='outline-blue') }}
+   ============================================================= #}
+
+{# Mapa de variantes para classes CSS #}
+{% set STYLES = {
+  'blue':          'btn-primary-custom',
+  'orange':        'btn-orange-custom',
+  'green':         'btn-green-custom',
+  'red':           'btn-red-custom',
+  'outline-blue':  'btn-outline-primary-custom',
+  'outline-orange':'btn-outline-orange-custom',
+  'outline-green': 'btn-outline-green-custom',
+  'outline-red':   'btn-outline-red-custom',
+  'secondary':     'btn-secondary',
+  'link':          'btn-link'
+} %}
+
+{% macro btn(label='', style='blue', type='button', icon='',
+             size='', extra_class='', attrs='', disabled=false) %}
+  <button type="{{ type }}"
+          class="btn {{ STYLES.get(style, 'btn-primary-custom') }} {{ 'btn-' ~ size if size }} {{ extra_class }}"
+          {{ 'disabled' if disabled }}
+          {{ attrs | safe }}>
+    {% if icon %}<i class="bi {{ icon }}"></i> {% endif %}{{ label }}
+  </button>
+{% endmacro %}
+
+
+{% macro btn_link(href='#', label='', style='blue', icon='',
+                  size='', extra_class='') %}
+  <a href="{{ href }}"
+     class="btn {{ STYLES.get(style, 'btn-primary-custom') }} {{ 'btn-' ~ size if size }} {{ extra_class }}">
+    {% if icon %}<i class="bi {{ icon }}"></i> {% endif %}{{ label }}
+  </a>
+{% endmacro %}

@@ -1,0 +1,40 @@
+/* ==========================================================
+   VARIABLES.CSS — Tokens de design da Family Pet Shop
+   Fonte única da verdade para cores, tipografia e espaçamento.
+   ========================================================== */
+
+:root {
+    /* --- Paleta da Marca --- */
+    --brand-blue:   #0E294B;
+    --brand-orange: #F98F2B;
+    --brand-red:    #D22B2B;
+    --brand-green:  #379f0a;
+    --brand-bg:     #d6e9fb;
+    --brand-gold:   #D4AF37;
+    --brand-gold-dark: #B8952E;
+
+    /* --- Tons Neutros --- */
+    --gray-1: #f8f9fa;
+    --gray-2: #e9ecef;
+    --gray-3: #dee2e6;
+    --gray-4: #495057;
+    --gray-5: #6c757d;
+
+    /* --- Sombras reutilizáveis --- */
+    --shadow-sm:  0 2px 6px rgba(0, 0, 0, 0.08);
+    --shadow-md:  0 4px 12px rgba(0, 0, 0, 0.12);
+    --shadow-lg:  0 8px 24px rgba(0, 0, 0, 0.16);
+    --shadow-soft: 0 10px 25px rgba(0,0,0,0.05);
+
+
+    /* --- Border-radius padrão --- */
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+    --radius-pill: 50px;
+    --radius-custom: 12px;
+
+    /* --- Transições --- */
+    --transition-fast: 0.2s ease-in-out;
+    --transition-base: 0.3s ease-in-out;
+}

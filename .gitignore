@@ -1,0 +1,36 @@
+# Variáveis de ambiente — NUNCA versionar
+.env
+
+# Banco de dados — nunca versionar o de produção
+*.db
+instance/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# VS Code
+.vscode/
+
+# Logs
+*.log
+instance/logs/
+
+# Uploads (dados de usuário)
+static/uploads/
+
+# OS
+.DS_Store
+Thumbs.db
+

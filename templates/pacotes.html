@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% block title %}Pacotes — Family Pet Shop{% endblock %}
+
+{% block content %}
+{% set ns = namespace(total=0) %}
+{% for pacote in pacotes %}
+    {% set ns.total = ns.total + (pacote.preco_pacote or 0) %}
+{% endfor %}
+
+<div class="container-fluid py-4">
+    
+    <form method="GET" action="{{ url_for('pacotes.listar') }}" id="form-filtros-pacotes">
+        <input type="hidden" name="filtro" value="{{ filtro_ativo or 'ativos' }}">
+
+        <div class="row align-items-center mb-4 g-3">
+            
+            <div class="col-12 col-lg-5">
+                <h1 class="fw-bold text-brand-blue mb-2">
+                    <span class="text-primary-custom">{{ pacotes|length }}</span> 
+                    {% if filtro_ativo == 'concluidos' %}
+                        Pacotes Concluídos
+                    {% elif filtro_ativo == 'todos' %}
+                        Pacotes ao Todo
+                    {% else %}
+                        Pacotes Ativos
+                    {% endif %}
+                </h1>
+                
+                <div class="d-flex align-items-center gap-2 mt-1">
+                    <span class="badge bg-white  shadow-sm px-3 py-2 rounded-pill fw-bold" style="font-size: 0.85rem; color: #e58226;">
+                        <i class="bi bi-cash-coin me-1"></i> Total na tela: R$ {{ "{:,.2f}".format(ns.total).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="col-12 col-md-8 col-lg-5 mt-4 mt-lg-0">
+                <div class="input-group shadow-sm">
+                    <input type="text" name="q" class="form-control form-control-lg border-0" 
+                        placeholder="Buscar tutor, pet..." value="{{ query or '' }}">
+                    <button class="btn btn-primary-custom" type="submit">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-4 col-lg-2 text-md-end mt-4 mt-lg-0">
+                <a href="{{ url_for('pacotes.novo') }}" class="btn btn-primary-custom btn-lg w-100 shadow-sm fw-bold">
+                    <i class="bi bi-plus-circle-fill me-2"></i> Novo
+                </a>
+            </div>
+        </div>
+
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+            
+            <div class="d-flex gap-2 overflow-auto pb-2 pb-md-0">
+                <a href="{{ url_for('pacotes.listar', filtro='todos', q=query, mes=request.args.get('mes'), status_pagamento=request.args.get('status_pagamento')) }}" 
+                   class="btn btn-sm {% if filtro_ativo == 'todos' %}btn-primary-custom{% else %}btn-outline-secondary{% endif %} rounded-pill px-4 fw-bold">
+                   Todos
+                </a>
+                <a href="{{ url_for('pacotes.listar', filtro='ativos', q=query, mes=request.args.get('mes'), status_pagamento=request.args.get('status_pagamento')) }}" 
+                   class="btn btn-sm {% if filtro_ativo == 'ativos' or not filtro_ativo %}btn-primary-custom{% else %}btn-outline-secondary{% endif %} rounded-pill px-4 fw-bold">
+                   Ativos
+                </a>
+                <a href="{{ url_for('pacotes.listar', filtro='concluidos', q=query, mes=request.args.get('mes'), status_pagamento=request.args.get('status_pagamento')) }}" 
+                   class="btn btn-sm {% if filtro_ativo == 'concluidos' %}btn-primary-custom{% else %}btn-outline-secondary{% endif %} rounded-pill px-4 fw-bold">
+                   Concluídos
+                </a>
+            </div>
+
+            <div class="d-flex gap-2 align-items-center">
+                <select name="mes" class="form-select form-select-sm rounded-pill shadow-sm border-0 px-3 fw-medium text-secondary" style="min-width: 140px;" onchange="this.form.submit()">
+                    <option value="">Todos os Meses</option>
+                    <option value="1" {% if request.args.get('mes') == '1' %}selected{% endif %}>Janeiro</option>
+                    <option value="2" {% if request.args.get('mes') == '2' %}selected{% endif %}>Fevereiro</option>
+                    <option value="3" {% if request.args.get('mes') == '3' %}selected{% endif %}>Março</option>
+                    <option value="4" {% if request.args.get('mes') == '4' %}selected{% endif %}>Abril</option>
+                    <option value="5" {% if request.args.get('mes') == '5' %}selected{% endif %}>Maio</option>
+                    <option value="6" {% if request.args.get('mes') == '6' %}selected{% endif %}>Junho</option>
+                    <option value="7" {% if request.args.get('mes') == '7' %}selected{% endif %}>Julho</option>
+                    <option value="8" {% if request.args.get('mes') == '8' %}selected{% endif %}>Agosto</option>
+                    <option value="9" {% if request.args.get('mes') == '9' %}selected{% endif %}>Setembro</option>
+                    <option value="10" {% if request.args.get('mes') == '10' %}selected{% endif %}>Outubro</option>
+                    <option value="11" {% if request.args.get('mes') == '11' %}selected{% endif %}>Novembro</option>
+                    <option value="12" {% if request.args.get('mes') == '12' %}selected{% endif %}>Dezembro</option>
+                </select>
+
+                <select name="status_pagamento" class="form-select form-select-sm rounded-pill shadow-sm border-0 px-3 fw-medium text-secondary" style="min-width: 160px;" onchange="this.form.submit()">
+                    <option value="">Todos</option>
+                    <option value="pago" {% if request.args.get('status_pagamento') == 'pago' %}selected{% endif %}>Pago </option>
+                    <option value="pendente" {% if request.args.get('status_pagamento') == 'pendente' %}selected{% endif %}>Pendente</option>
+                </select>
+            </div>
+            
+        </div>
+    </form>
+
+    <div class="row g-4 mb-5">
+        {% for pacote in pacotes %}
+            <div class="col-12 col-lg-6">
+                {% include 'includes/card_pacote_geral.html' %}
+            </div>
+        {% else %}
+            <div class="col-12">
+                <div class="alert alert-light border-0 shadow-sm text-center py-4 rounded-4">
+                    <i class="bi bi-inbox text-muted fs-1 mb-2 d-block"></i>
+                    <h5 class="text-dark fw-bold">Nenhum pacote encontrado</h5>
+                    <p class="text-muted">Não localizamos nenhum pacote com os filtros aplicados.</p>
+                    <a href="{{ url_for('pacotes.listar') }}" class="btn btn-outline-secondary rounded-pill px-4 mt-2">Limpar Todos os Filtros</a>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}

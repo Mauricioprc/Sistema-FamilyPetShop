@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+{% block title %}Registrar Pagamento — Family Pet Shop{% endblock %}
+{% block content %}
+
+{% set is_pacote = True if pacote else False %}
+{% set obj = pacote if is_pacote else atendimento %}
+{% set valor_bruto = obj.preco_pacote if is_pacote else obj.preco %}
+
+<div class="container-fluid py-4">
+
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+        <div>
+            <h1 class="h3 mb-1 text-gray-800 fw-semibold">Registar Pagamento</h1>
+            <p class="text-secondary fw-medium mb-0" style="font-size: 0.95rem;">Confirme o recebimento deste serviço</p>
+        </div>
+        <a href="{{ url_for('financeiro.listar') }}" class="btn btn-light rounded-pill px-4 text-secondary border shadow-sm fw-medium">
+            <i class="bi bi-x-lg me-1"></i> Cancelar
+        </a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            
+            <div class="card bg-white border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-body p-4">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-3">
+                        <div>
+                            <h5 class="fw-semibold text-brand-blue mb-1">{{ obj.cliente.nome_tutor }}</h5>
+                            <p class="text-secondary small fw-medium mb-0"></i>Pet: {{ obj.cliente.nome_pet }}</p>
+                        </div>
+                        <div class="text-md-end">
+                            <span class="d-block text-secondary small fw-medium mb-1">Valor a Receber</span>
+                            <h3 class="fw-semibold text-success mb-0">R$ {{ "%.2f"|format(valor_bruto)|replace('.', ',') }}</h3>
+                        </div>
+                    </div>
+                    
+                    <hr class="opacity-10 my-3">
+                    
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-secondary small fw-medium">Origem do Valor:</span>
+                        <div>
+                            {% if is_pacote %}
+                                <span class="badge bg-light text-primary-custom border rounded-pill px-3 py-1 fw-medium me-2"><i class="bi bi-box-seam me-1"></i> Pacote ({{ obj.creditos_totais }}x)</span>
+                            {% else %}
+                                <span class="badge bg-light text-secondary border rounded-pill px-3 py-1 fw-medium me-2"><i class="bi bi-tag me-1"></i> Avulso</span>
+                            {% endif %}
+                            <span class="fw-medium text-dark small">{{ obj.nome_servico }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card bg-white border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-body p-4 p-md-5">
+                    
+                    <form method="POST" id="formPagamento">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <input type="hidden" id="valor_bruto_hidden" value="{{ valor_bruto }}">
+                        
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-6">
+                                <label for="data_pagamento" class="form-label text-secondary fw-medium small">Data do Pagamento</label>
+                                <input type="date" id="data_pagamento" name="data_pagamento" class="form-control form-control-lg bg-light border-0 text-dark fs-6" required>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="metodo_pagamento" class="form-label text-secondary fw-medium small">Método de Pagamento</label>
+                                <select name="metodo_pagamento" id="metodo_pagamento" class="form-select form-select-lg bg-light border-0 text-dark fs-6" required>
+                                    <option value="" disabled selected>-- Escolha como recebeu --</option>
+                                    <option value="PIX">PIX</option>
+                                    <option value="Cartão de Crédito">Cartão de Crédito</option>
+                                    <option value="Cartão de Débito">Cartão de Débito</option>
+                                    <option value="Dinheiro">Dinheiro Físico</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div id="secao_maquininha" class="card bg-success-subtle border-0 rounded-4 mb-4 d-none">
+                            <div class="card-body p-4">
+                                <div class="row align-items-center g-3">
+                                    <div class="col-md-5">
+                                        <label class="form-label text-success fw-medium small"><i class="bi bi-percent me-1"></i>Taxa da Maquininha (%)</label>
+                                        <input type="text" inputmode="decimal" id="taxa_maquina" name="taxa_maquina" class="form-control form-control-lg bg-white border-0 text-dark" placeholder="Ex: 2,99">
+                                    </div>
+                                    <div class="col-md-7 text-md-end">
+                                        <span class="text-success fw-medium small d-block mb-1">Valor Real que entrará:</span>
+                                        <h3 class="text-success fw-semibold mb-0">R$ <span id="label_valor_liquido">0,00</span></h3>
+                                        <input type="hidden" id="valor_liquido" name="valor_liquido">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="text-end mt-5">
+                            <button type="submit" class="btn btn-success btn-lg px-5 rounded-pill shadow-sm fw-medium transition-all hover-solid">
+                                Confirmar Pagamento <i class="bi bi-check2-circle ms-1"></i>
+                            </button>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.form-control:focus, .form-select:focus {
+    box-shadow: none !important;
+    outline: none !important;
+    background-color: #eef1f5 !important;
+}
+.hover-solid:hover { filter: brightness(0.95); }
+</style>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const selectMetodo = document.getElementById("metodo_pagamento");
+    const secaoMaquininha = document.getElementById("secao_maquininha");
+    const inputTaxa = document.getElementById("taxa_maquina");
+    const labelLiquido = document.getElementById("label_valor_liquido");
+    const inputLiquido = document.getElementById("valor_liquido");
+    const form = document.getElementById("formPagamento");
+    
+    // 1. CAPTURA DO VALOR BRUTO (Lendo do input escondido)
+    const valorBrutoHidden = document.getElementById("valor_bruto_hidden").value;
+    const valorBruto = parseFloat(valorBrutoHidden.replace(',', '.')) || 0;
+
+    // Definição das chaves de memória
+    const KEY_CREDITO = "ultima_taxa_credito";
+    const KEY_DEBITO = "ultima_taxa_debito";
+
+    // 2. Função de Cálculo Matemática
+    function calcularLiquido() {
+        let textoTaxa = inputTaxa.value.replace(',', '.'); 
+        const taxa = parseFloat(textoTaxa) || 0;
+        
+        const liquido = valorBruto - (valorBruto * (taxa / 100));
+        
+        // Atualiza na tela (Ex: 97,00)
+        labelLiquido.innerText = liquido.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        
+        // Guarda o valor real para o Python
+        inputLiquido.value = liquido.toFixed(2);
+    }
+
+    // 3. Mostra/esconde seção e CARREGA TAXA ESPECÍFICA
+    selectMetodo.addEventListener("change", function() {
+        const metodo = this.value;
+
+        if (metodo === "Cartão de Crédito" || metodo === "Cartão de Débito") {
+            secaoMaquininha.classList.remove("d-none");
+            
+            // Lógica de Memória Independente
+            if (metodo === "Cartão de Crédito") {
+                inputTaxa.value = localStorage.getItem(KEY_CREDITO) || "";
+            } else {
+                inputTaxa.value = localStorage.getItem(KEY_DEBITO) || "";
+            }
+            
+            calcularLiquido();
+        } else {
+            secaoMaquininha.classList.add("d-none");
+            inputLiquido.value = valorBruto.toFixed(2);
+        }
+    });
+
+    // 4. Salva a taxa na "gaveta" correta ao digitar
+    inputTaxa.addEventListener("input", function() {
+        const metodo = selectMetodo.value;
+        
+        if (metodo === "Cartão de Crédito") {
+            localStorage.setItem(KEY_CREDITO, this.value);
+        } else if (metodo === "Cartão de Débito") {
+            localStorage.setItem(KEY_DEBITO, this.value);
+        }
+        
+        calcularLiquido();
+    });
+
+    // 5. MENSAGEM DE CONFIRMAÇÃO
+    form.addEventListener("submit", function(e) {
+        let valorFinalNumero = parseFloat(inputLiquido.value || valorBruto);
+        let valorFinalFormatado = valorFinalNumero.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        
+        const msg = `Confirma o recebimento deste pagamento?\n\nValor Real que entrará no caixa: ${valorFinalFormatado}`;
+        
+        if (!confirm(msg)) {
+            e.preventDefault();
+        }
+    });
+
+    // 6. Data padrão hoje
+    const inputData = document.getElementById("data_pagamento");
+    if(inputData) {
+        inputData.value = new Date().toISOString().split('T')[0];
+    }
+});
+</script>
+{% endblock %}

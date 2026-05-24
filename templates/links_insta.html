@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Family Pet Shop | 10 Anos</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Gloria+Hallelujah&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body data-bs-spy="scroll" data-bs-target=".navbar" data-bs-offset="100">
+
+  {# Navbar Desktop #}
+  <nav class="navbar navbar-expand-lg fixed-top navbar-desktop d-none d-lg-block">
+    <div class="container">
+      <a class="navbar-brand fw-bold fs-3" href="#">Family <span class="text-gold">Pet Shop</span></a>
+      <div class="collapse navbar-collapse justify-content-end">
+        <ul class="navbar-nav gap-3 align-items-center">
+          <li class="nav-item"><a class="nav-link text-dark" href="#home">Home</a></li>
+          <li class="nav-item"><a class="nav-link text-dark" href="#sobre">Sobre</a></li>
+          <li class="nav-item"><a class="nav-link text-dark" href="#servicos">Serviços</a></li>
+          <li class="nav-item"><a class="nav-link text-dark" href="#localizacao">Localização</a></li>
+          <li class="nav-item">
+            <a href="{{ url_for('publico.solicitar_agendamento') }}" class="btn btn-gold-custom btn-sm px-4">Agendar</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  {# Navbar Mobile #}
+  <nav class="navbar fixed-top bg-white shadow-sm d-lg-none py-2">
+    <div class="container justify-content-center">
+      <span class="navbar-brand mb-0 h1 fw-bold fs-5">Family <span class="text-gold">Pet Shop</span></span>
+    </div>
+  </nav>
+
+  {# === HERO === #}
+  <header class="hero-section" id="home">
+    <div class="container">
+      <div class="row align-items-center flex-lg-row-reverse text-center text-lg-start">
+        <div class="col-lg-6 text-center mb-4 mb-lg-0">
+          <img src="{{ url_for('static', filename='Design sem nome.jpg') }}" alt="Logo Family Pet Shop" class="hero-logo-img" loading="lazy">
+        </div>
+        <div class="col-lg-6">
+          <span class="text-gold fw-bold text-uppercase ls-2 mb-2 d-inline-block">10 Anos de História</span>
+          <h1 class="display-4 fw-bold text-white mb-3">Cuidado Premium para seu Pet</h1>
+          <p class="text-white-50 fs-5 mb-4">Estética especializada, ambiente seguro e profissionais que amam o que fazem.</p>
+          <div class="d-flex gap-3 justify-content-center justify-content-lg-start flex-wrap">
+            <a href="{{ url_for('publico.solicitar_agendamento') }}" class="btn btn-gold-custom">
+              <i class="bi bi-calendar-check me-2"></i> Agendar
+            </a>
+            <a href="https://wa.me/5535988517297" class="btn btn-outline-light rounded-pill px-4 py-2 fw-bold">
+              <i class="bi bi-whatsapp me-2"></i> WhatsApp
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  {# === DIFERENCIAIS === #}
+  <section class="py-5 bg-white position-relative" style="margin-top:-30px;z-index:10;border-radius:30px 30px 0 0;">
+    <div class="container">
+      <div class="row text-center g-4">
+        {% for icon, label_lg, label_sm in [
+          ('bi-award-fill','10 Anos de Tradição','10 Anos'),
+          ('bi-shield-check','Segurança Total','Seguro'),
+          ('bi-heart-fill','Amor aos Animais','Amor')
+        ] %}
+        <div class="col-4">
+          <div class="p-3 bg-light rounded-4 h-100 shadow-sm">
+            <i class="bi {{ icon }} text-gold fs-1 d-block mb-2"></i>
+            <h6 class="fw-bold m-0 d-none d-md-block">{{ label_lg }}</h6>
+            <small class="fw-bold d-md-none">{{ label_sm }}</small>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  {# === SERVIÇOS === #}
+  <section class="py-4 py-lg-5 ps-3 ps-lg-0" id="servicos">
+    <div class="container p-0">
+      <div class="d-flex justify-content-between align-items-end pe-3 mb-4">
+        <div>
+          <h6 class="text-gold fw-bold text-uppercase m-0">Nossos Serviços</h6>
+          <h2 class="fw-bold m-0 display-6">O melhor para eles</h2>
+        </div>
+        <small class="text-gold d-lg-none">Arraste <i class="bi bi-arrow-right"></i></small>
+      </div>
+      <div class="services-wrapper">
+        {% for img, title, desc in [
+          ('imagem5.jpg','Banho Premium','Hidratação profunda e produtos hipoalergênicos da melhor qualidade.'),
+          ('imagem02.jpg','Tosa Especializada','Na tesoura ou máquina. Respeitamos o padrão da raça e o seu gosto.'),
+          ('imagem4.jpg','Pacotes Mensais','Garanta a rotina de cuidados com economia. Consulte o leva e traz.')
+        ] %}
+        <div class="service-card">
+          <img src="{{ url_for('static', filename=img) }}" alt="{{ title }}" loading="lazy">
+          <div class="p-4 text-center text-lg-start">
+            <h5 class="fw-bold mb-2">{{ title }}</h5>
+            <p class="small text-muted mb-0">{{ desc }}</p>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  {# === SOBRE === #}
+  <section id="sobre" class="py-5 bg-light overflow-hidden">
+    <div class="container">
+      {# Desktop #}
+      <div class="row align-items-center g-4 d-none d-lg-flex">
+        <div class="col-lg-6 order-lg-2">
+          <img src="{{ url_for('static', filename='imagem3.jpg') }}" class="img-fluid rounded-4 shadow w-100" alt="Equipe" loading="lazy">
+        </div>
+        <div class="col-lg-6 order-lg-1">
+          <h5 class="text-gold fw-bold text-uppercase ls-2">Quem Somos</h5>
+          <h2 class="display-5 fw-bold mb-3">Família cuidando de família</h2>
+          <p class="text-muted">Há 10 anos, a Family Pet Shop nasceu com um propósito: oferecer um espaço onde os tutores pudessem confiar de olhos fechados. Hoje, somos referência em estética e cuidado animal.</p>
+          <ul class="list-unstyled mt-4 text-muted">
+            <li class="mb-2"><i class="bi bi-patch-check-fill text-gold me-2"></i> Profissionais Certificados</li>
+            <li class="mb-2"><i class="bi bi-shield-check-fill text-gold me-2"></i> Ambiente Monitorado</li>
+            <li><i class="bi bi-heart-fill text-gold me-2"></i> Produtos Hipoalergênicos</li>
+          </ul>
+        </div>
+      </div>
+      {# Mobile #}
+      <div class="d-lg-none text-center position-relative">
+        <div class="position-relative d-inline-block mb-4">
+          <div class="position-absolute top-50 start-50 translate-middle bg-warning opacity-25 rounded-circle" style="width:110%;height:110%;filter:blur(15px);"></div>
+          <img src="{{ url_for('static', filename='imagem3.jpg') }}" class="position-relative rounded-circle border border-4 border-white shadow-lg" style="width:180px;height:180px;object-fit:cover;z-index:1;" alt="Equipe" loading="lazy">
+          <div class="position-absolute bottom-0 end-0 bg-gold text-white rounded-circle d-flex flex-column align-items-center justify-content-center shadow-sm" style="width:70px;height:70px;transform:translate(10px,10px);z-index:2;border:3px solid white;">
+            <span class="fw-bold lh-1" style="font-size:1.2rem;">10</span>
+            <span class="text-uppercase" style="font-size:0.5rem;letter-spacing:1px;">Anos</span>
+          </div>
+        </div>
+        <div class="px-2">
+          <h6 class="text-gold fw-bold text-uppercase mb-2 small">DE História</h6>
+          <h2 class="fw-bold mb-3">Cuidando com Amor</h2>
+          <p class="text-muted small mb-4 px-3">"No Family Pet Shop, entendemos que seu pet não é apenas um animal, é parte da família."<br>Ass: Scheila Resende</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {# === LOCALIZAÇÃO === #}
+  <section id="localizacao" class="py-5 bg-white border-top">
+    <div class="container">
+      <div class="text-center mb-4">
+        <h5 class="text-gold fw-bold text-uppercase ls-2">Localização</h5>
+        <h2 class="fw-bold d-none d-lg-block">Venha nos fazer uma visita</h2>
+      </div>
+      {# Desktop #}
+      <div class="row align-items-center d-none d-lg-flex">
+        <div class="col-lg-5">
+          <div class="p-4">
+            <h3 class="fw-bold mb-4">Estamos esperando por você</h3>
+            <div class="d-flex mb-4">
+              <span class="bg-gold text-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:50px;height:50px;">
+                <i class="bi bi-geo-alt-fill fs-4"></i>
+              </span>
+              <div class="ms-3">
+                <h6 class="fw-bold mb-1">Endereço</h6>
+                <p class="text-muted mb-0">Rua Dois de Novembro, 41 - Centro</p>
+                <p class="text-muted">Boa Esperança/MG</p>
+              </div>
+            </div>
+            <div class="d-flex mb-4">
+              <span class="bg-light text-gold border border-warning rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:50px;height:50px;">
+                <i class="bi bi-shop fs-4"></i>
+              </span>
+              <div class="ms-3">
+                <h6 class="fw-bold mb-1">Referência</h6>
+                <p class="text-muted mb-0">Ao lado da Katuxa Calçados</p>
+              </div>
+            </div>
+            <div class="alert alert-light border-warning border-start border-4 shadow-sm">
+              <i class="bi bi-clock text-gold me-2"></i> <strong>Horário:</strong> Seg-Sex 08h–18h | Sáb 08h–12h
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-7">
+          <div class="rounded-4 overflow-hidden shadow-lg border border-4 border-light">
+            <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3725.123!2d-45.566!3d-21.092!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjHCsDA1JzMxLjIiUyA0NcKwMzMnNTguMCJX!5e0!3m2!1spt-BR!2sbr!4v1234567890" width="100%" height="400" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+          </div>
+        </div>
+      </div>
+      {# Mobile #}
+      <div class="d-lg-none">
+        <div class="card border-0 shadow-lg rounded-4 overflow-hidden mx-auto" style="max-width:400px;">
+          <div class="position-relative" style="height:160px;overflow:hidden;">
+            <img src="{{ url_for('static', filename='mapa.png') }}" class="w-100 h-100 object-fit-cover" style="filter:brightness(0.6);" alt="Mapa" loading="lazy">
+            <div class="position-absolute top-50 start-50 translate-middle text-center">
+              <i class="bi bi-geo-alt-fill text-danger display-1" style="animation:bounce 2s infinite;"></i>
+            </div>
+          </div>
+          <div class="card-body bg-white text-center pt-4">
+            <h5 class="fw-bold mb-1">Rua Dois de Novembro, 41</h5>
+            <p class="text-muted small mb-3">Centro - Boa Esperança/MG</p>
+            <div class="row g-2 mb-4 justify-content-center">
+              <div class="col-6">
+                <div class="bg-light p-2 rounded-3">
+                  <i class="bi bi-shop text-gold d-block mb-1"></i>
+                  <small class="d-block text-muted" style="font-size:0.7rem;">Ao lado da</small>
+                  <span class="fw-bold small">Katuxa</span>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="bg-light p-2 rounded-3">
+                  <i class="bi bi-clock text-gold d-block mb-1"></i>
+                  <small class="d-block text-muted" style="font-size:0.7rem;">Seg a Sex</small>
+                  <span class="fw-bold small">8h às 18h</span>
+                </div>
+              </div>
+            </div>
+            <a href="https://www.google.com/maps/search/?api=1&query=Rua+Dois+de+Novembro+41+Centro+Boa+Esperança+MG" target="_blank"
+               class="btn btn-gold-custom w-100 py-3 rounded-pill d-flex align-items-center justify-content-center gap-2">
+              <i class="bi bi-cursor-fill"></i> TRAÇAR ROTA
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {# === MURAL DA FAMA === #}
+  <section class="py-5 position-relative" style="background-color:#f8f5f2;overflow:hidden;">
+    <div class="position-absolute top-0 start-0 w-100 h-100" style="opacity:0.6;background-image:radial-gradient(#d4af37 0.5px,transparent 0.5px);background-size:30px 30px;"></div>
+    <div class="container position-relative z-1">
+      <div class="text-center mb-5">
+        <span class="text-gold fw-bold text-uppercase ls-2 small">Nossa Família</span>
+        <h2 class="fw-bold display-6 mb-3">Mural da Fama</h2>
+        <p class="text-muted mx-auto" style="max-width:600px;">Cada pet que passa por aqui deixa uma marca em nossos corações.</p>
+      </div>
+
+      <div class="polaroid-wrapper">
+        {% for av in avaliacoes %}
+        <div class="polaroid-item">
+          <div class="polaroid-card">
+            <div class="tape-strip"></div>
+            <div class="polaroid-img-box">
+              {% if av.imagem_pet %}
+                <img src="{{ url_for('static', filename='uploads/' + av.imagem_pet) }}" alt="Pet" class="polaroid-photo" loading="lazy">
+              {% else %}
+                <div class="h-100 d-flex align-items-center justify-content-center">
+                  <i class="bi bi-camera-fill text-muted opacity-25 display-4"></i>
+                </div>
+              {% endif %}
+            </div>
+            <div class="polaroid-body">
+              <p class="handwritten-text text-dark mb-2">"{{ av.avaliacao_texto }}"</p>
+              <div class="d-flex justify-content-between align-items-end border-top pt-2">
+                <div>
+                  {% if av.nome_pet %}
+                    <h5 class="fw-bold text-gold mb-0" style="font-family:'Poppins',sans-serif;">{{ av.nome_pet }} 🐾</h5>
+                    <small class="text-muted" style="font-size:0.75rem;">Tutor(a): {{ av.nome_cliente }}</small>
+                  {% else %}
+                    <h6 class="fw-bold text-dark mb-0">{{ av.nome_cliente }}</h6>
+                  {% endif %}
+                </div>
+                <div class="text-end">
+                  <div class="text-warning small mb-1">
+                    {% for i in range(av.nota) %}<i class="bi bi-star-fill"></i>{% endfor %}
+                  </div>
+                  <span class="badge bg-light text-muted border rounded-pill" style="font-size:0.6rem;font-weight:normal;">{{ av.data.strftime('%d/%m') }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% else %}
+        <div class="col-12 text-center py-5">
+          <h5 class="text-muted">Nosso mural está esperando sua primeira foto!</h5>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="text-center mt-5">
+        <button class="btn btn-gold-custom shadow-lg px-4 py-3" data-bs-toggle="modal" data-bs-target="#modalAvaliacao">
+          <i class="bi bi-camera-fill me-2"></i> Enviar Foto do meu Pet
+        </button>
+      </div>
+    </div>
+  </section>
+
+  {# === GALERIA INSTAGRAM === #}
+  <section class="bg-white pt-5 pb-0">
+    <div class="container text-center mb-4">
+      <h3 class="fw-bold mb-2">Somos especialistas em carinho</h3>
+      <p class="text-muted mx-auto" style="max-width:700px;">
+        Siga-nos no Instagram <a href="https://www.instagram.com/family.petshopp/" target="_blank" class="text-gold text-decoration-none fw-bold">@FamilyPetShop</a>
+      </p>
+    </div>
+    <div class="gallery-strip-wrapper">
+      {% for img, href, alt in [
+        ('insta1.png','https://www.instagram.com/p/DGjZtDzOxsM/','Equipe'),
+        ('insta2.png','https://www.instagram.com/p/DE5sr6YSN8Y/','Pet'),
+        ('insta3.png','https://www.instagram.com/p/DBMqrjISDW7/','Banho'),
+        ('insta4.png','https://www.instagram.com/p/C4bxI9ZryBI/?img_index=1','Tosa')
+      ] %}
+      <div class="gallery-item">
+        <a href="{{ href }}" target="_blank">
+          <img src="{{ url_for('static', filename=img) }}" alt="{{ alt }}" loading="lazy">
+          <div class="insta-overlay"><i class="bi bi-instagram"></i></div>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  {# === BOTTOM NAV (Mobile) === #}
+  <div class="bottom-nav d-lg-none">
+    <a href="#home" class="nav-item-app active"><i class="bi bi-house-door"></i><span>Início</span></a>
+    <a href="#localizacao" class="nav-item-app"><i class="bi bi-geo-alt"></i><span>Mapa</span></a>
+    <div class="nav-item-app">
+      <a href="{{ url_for('publico.solicitar_agendamento') }}" class="nav-item-highlight"><i class="bi bi-calendar-check"></i></a>
+      <span class="label-agendar">Agendar</span>
+    </div>
+    <a href="#servicos" class="nav-item-app"><i class="bi bi-grid"></i><span>Serviços</span></a>
+    <a href="https://wa.me/5535988517297" class="nav-item-app"><i class="bi bi-whatsapp"></i><span>Zap</span></a>
+  </div>
+
+  {# === MODAL AVALIAÇÃO === #}
+  <div class="modal fade" id="modalAvaliacao" tabindex="-1" style="z-index:10000;">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content border-0 shadow-lg rounded-4">
+        <div class="modal-header border-0 bg-gold text-white p-4 position-relative overflow-hidden flex-shrink-0">
+          <div class="position-relative z-1">
+            <h5 class="modal-title fw-bold fs-4"><i class="bi bi-camera-fill me-2"></i> Eternizar Momento</h5>
+            <p class="mb-0 small opacity-75">Compartilhe sua história com a gente</p>
+          </div>
+          <button type="button" class="btn-close btn-close-white z-1" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-0">
+          <form method="POST" action="{{ url_for('publico.submeter_avaliacao') }}" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="bg-light p-4 text-center border-bottom">
+              <input type="file" name="foto_pet" id="foto_pet_input" class="d-none" accept="image/*" onchange="mostrarPreview(this)">
+              <label for="foto_pet_input" class="d-block p-3 rounded-3" style="border:2px dashed #ddd;background:#fff;cursor:pointer;">
+                <div id="upload-placeholder" class="py-2">
+                  <div class="mx-auto mb-3 text-gold" style="width:50px;height:50px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;">
+                    <i class="bi bi-cloud-arrow-up-fill fs-3"></i>
+                  </div>
+                  <h6 class="fw-bold text-dark mb-0">Toque para adicionar foto</h6>
+                </div>
+                <div id="upload-preview-container" class="d-none">
+                  <img id="upload-preview-img" src="" alt="Preview" class="img-fluid rounded-3 shadow-sm" style="max-height:200px;object-fit:cover;">
+                </div>
+              </label>
+            </div>
+            <div class="p-4">
+              <div class="row g-2 mb-3">
+                <div class="col-6">
+                  <div class="form-floating">
+                    <input type="text" name="nome_cliente" class="form-control bg-light border-0 rounded-3" id="inputCliente" placeholder="Seu Nome" required>
+                    <label for="inputCliente" class="text-muted">Seu Nome</label>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="form-floating">
+                    <input type="text" name="nome_pet" class="form-control bg-light border-0 rounded-3" id="inputPet" placeholder="Nome do Pet" required>
+                    <label for="inputPet" class="text-muted">Nome do Pet</label>
+                  </div>
+                </div>
+              </div>
+              <div class="form-floating mb-4">
+                <textarea name="avaliacao_texto" class="form-control bg-light border-0 rounded-3" placeholder="Comentário" id="floatingTextarea" style="height:100px;" required></textarea>
+                <label for="floatingTextarea" class="text-muted">Escreva sua mensagem...</label>
+              </div>
+              <div class="text-center mb-2">
+                <label class="fw-bold text-uppercase text-muted small mb-2 d-block">Sua Nota</label>
+                <div class="rating-box d-inline-flex flex-row-reverse justify-content-center gap-2 bg-light px-4 py-2 rounded-pill">
+                  {% for i in [5,4,3,2,1] %}
+                  <input type="radio" class="d-none" name="nota" id="st{{ i }}" value="{{ i }}" {% if i == 5 %}checked{% endif %}>
+                  <label for="st{{ i }}" class="star-item"><i class="bi bi-star-fill"></i></label>
+                  {% endfor %}
+                </div>
+              </div>
+              <div style="height:20px;"></div>
+            </div>
+            <div class="modal-footer border-0 p-4 pt-0 bg-white">
+              <button type="submit" class="btn btn-gold-custom w-100 py-3 fw-bold rounded-pill">
+                PUBLICAR NO MURAL <i class="bi bi-heart-fill ms-2"></i>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Menu inferior: estado ativo
+    document.querySelectorAll('.nav-item-app').forEach(item => {
+      item.addEventListener('click', function() {
+        document.querySelectorAll('.nav-item-app').forEach(n => n.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+    // Navbar desktop: efeito ao scroll
+    window.addEventListener('scroll', function() {
+      document.querySelector('.navbar-desktop')?.classList.toggle('scrolled', window.scrollY > 50);
+    });
+    // Preview de imagem
+    function mostrarPreview(input) {
+      if (!input.files?.[0]) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        document.getElementById('upload-placeholder').classList.add('d-none');
+        document.getElementById('upload-preview-img').src = e.target.result;
+        document.getElementById('upload-preview-container').classList.remove('d-none');
+      };
+      reader.readAsDataURL(input.files[0]);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+/* ==========================================================
+   MAIN.CSS — Ponto de entrada: importa todos os módulos CSS
+   Substitui o antigo style.css monolítico (1.095 linhas)
+   ========================================================== */
+
+@import url('variables.css');
+@import url('base.css');
+@import url('buttons.css');
+@import url('forms.css');
+@import url('cards.css');
+@import url('navbar.css');
+@import url('responsive.css');
+@import url('landing.css');

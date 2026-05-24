@@ -1,0 +1,149 @@
+<thead class="table-secondary">
+  <tr>
+    <th>Data</th>
+    <th>Serviço</th>
+    <th>Status Pgto.</th>
+    <th>Valor (R$)</th>
+    <th>Ações</th>
+  </tr>
+</thead>
+<tbody>
+  {% for atendimento in atendimentos %}
+    <tr>
+        <td data-bs-toggle="modal" data-bs-target="#detalheModal-{{ atendimento.id }}" style="cursor: pointer;">
+            {{ atendimento.data.strftime('%d/%m/%Y') }}
+        </td>
+        <td data-bs-toggle="modal" data-bs-target="#detalheModal-{{ atendimento.id }}" style="cursor: pointer;">
+            {{ atendimento.nome_servico }}
+        </td>
+        <td data-bs-toggle="modal" data-bs-target="#detalheModal-{{ atendimento.id }}" style="cursor: pointer;">
+            {% if atendimento.pacote_id %}
+                <span class="badge bg-primary"><i class="bi bi-box-seam"></i> Pacote</span>
+            {% elif atendimento.status_pagamento == 'Pendente' %}
+                {% if atendimento.data < hoje %}
+                    <span class="badge" style="background-color: #fd7e14; color: white;" title="Pagamento Atrasado">
+                        <i class="bi bi-exclamation-circle"></i> Vencido: {{ atendimento.data.strftime('%d/%m/%Y') }}
+                    </span>
+                {% else %}
+                    <span class="badge bg-primary" title="Dentro do Prazo">
+                        <i class="bi bi-calendar-event"></i> Vence em: {{ atendimento.data.strftime('%d/%m/%Y') }}
+                    </span>
+                {% endif %}
+            {% else %}
+                <span class="badge bg-secondary">
+                    <i class="bi bi-check-circle"></i> Pago
+                    {% if atendimento.data_pagamento %}
+                        em {{ atendimento.data_pagamento.strftime('%d/%m/%Y') }}
+                    {% endif %}
+                </span>
+            {% endif %}
+        </td>
+        <td data-bs-toggle="modal" data-bs-target="#detalheModal-{{ atendimento.id }}" style="cursor: pointer;">
+            R$ {{ atendimento.preco | float | currency }}
+        </td>
+        <td>
+            <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#modalEditarAtendimento-{{ atendimento.id }}" title="Editar Atendimento">
+                <i class="bi bi-pencil-fill"></i>
+            </button>
+            <form action="{{ url_for('agenda.excluir', atendimento_id=atendimento.id) }}" method="POST" class="d-inline">
+                <button type="submit" class="btn btn-danger btn-sm" title="Excluir" onclick="return confirm('Tem certeza que deseja excluir este atendimento? Esta ação não pode ser desfeita.');">
+                    <i class="bi bi-trash-fill"></i>
+                </button>
+            </form>
+        </td>
+    </tr>
+
+    <div class="modal fade" id="detalheModal-{{ atendimento.id }}" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Detalhes do Atendimento</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+             <p><strong>Pet:</strong> {{ atendimento.cliente.nome_pet }}</p>
+            <p><strong>Serviço:</strong> {{ atendimento.nome_servico }}</p>
+            <p><strong>Data do Serviço:</strong> {{ atendimento.data.strftime('%d/%m/%Y') }}</p>
+            <hr>
+            <h6><strong>Status Financeiro</strong></h6>
+            {% if atendimento.pacote_id %}
+                <p>Serviço coberto pelo pacote.</p>
+            {% elif atendimento.status_pagamento == 'Pendente' %}
+                <p class="text-danger">Pagamento Pendente.</p>
+            {% else %}
+                <p class="text-success">
+                    Pago em {{ atendimento.data_pagamento.strftime('%d/%m/%Y') if atendimento.data_pagamento else 'Data não registrada' }}
+                    <br>
+                    <small><strong>Método:</strong> {{ atendimento.metodo_pagamento or 'Não informado' }}</small>
+                </p>
+            {% endif %}
+
+            {% if atendimento.observacao %}
+                <hr>
+                <h6><strong>Observações</strong></h6>
+                <p>{{ atendimento.observacao }}</p>
+            {% endif %}
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="modalEditarAtendimento-{{ atendimento.id }}" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <form method="POST" action="{{ url_for('agenda.editar', atendimento_id=atendimento.id) }}">
+              <div class="modal-header">
+                <h5 class="modal-title">Editar Atendimento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                  <p>Editando serviço para: <strong>{{ atendimento.cliente.nome_pet }}</strong></p>
+                  
+                  <div class="mb-3">
+                      <label for="data-{{ atendimento.id }}" class="form-label">Data do Atendimento:</label>
+                      <input type="date" id="data-{{ atendimento.id }}" name="data" class="form-control" value="{{ atendimento.data.strftime('%Y-%m-%d') }}" required>
+                  </div>
+
+                  <div class="mb-3">
+                      <label for="nome_servico-{{ atendimento.id }}" class="form-label">Serviço:</label>
+                      <input type="text" id="nome_servico-{{ atendimento.id }}" name="nome_servico" class="form-control" value="{{ atendimento.nome_servico }}" {% if atendimento.pacote_id %}readonly{% endif %}>
+                      {% if atendimento.pacote_id %}
+                          <div class="form-text">O serviço não pode ser alterado pois pertence a um pacote.</div>
+                      {% endif %}
+                  </div>
+
+                  <div class="mb-3">
+                      <label for="preco-{{ atendimento.id }}" class="form-label">Valor (R$):</label>
+                      <input type="text" id="preco-{{ atendimento.id }}" name="preco" class="form-control" value="{{ "%.2f"|format(atendimento.preco) }}" {% if atendimento.pacote_id %}readonly{% endif %}>
+                      {% if atendimento.pacote_id %}
+                          <div class="form-text">O valor não pode ser alterado pois pertence a um pacote.</div>
+                      {% endif %}
+                  </div>
+
+                  <div class="mb-3">
+                      <label for="status_presenca-{{ atendimento.id }}" class="form-label">Status da Presença:</label>
+                      <select name="status_presenca" id="status_presenca-{{ atendimento.id }}" class="form-select">
+                          <option value="Agendado" {% if atendimento.status_presenca == 'Agendado' %}selected{% endif %}>Agendado</option>
+                          <option value="Presente" {% if atendimento.status_presenca == 'Presente' %}selected{% endif %}>Presente</option>
+                          <option value="Faltou" {% if atendimento.status_presenca == 'Faltou' %}selected{% endif %}>Faltou</option>
+                      </select>
+                  </div>
+
+                  <div class="mb-3">
+                    <label for="observacao-{{ atendimento.id }}" class="form-label">Observações:</label>
+                    <textarea name="observacao" id="observacao-{{ atendimento.id }}" class="form-control" rows="2">{{ atendimento.observacao or '' }}</textarea>
+                  </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-success">Salvar Alterações</button>
+              </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+</tbody>

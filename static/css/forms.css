@@ -1,0 +1,114 @@
+/* ==========================================================
+   FORMS.CSS — Inputs, selects, validação e wizard
+   ========================================================== */
+
+/* --- Input limpo padrão --- */
+.clean-input {
+    border: 1px solid var(--gray-3);
+    border-radius: var(--radius-sm);
+    height: 45px;
+    font-size: 16px;
+    padding: 0.375rem 0.75rem;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    width: 100%;
+    box-sizing: border-box;
+}
+.clean-input:focus {
+    border-color: var(--brand-blue);
+    box-shadow: 0 0 0 0.25rem rgba(14, 41, 75, 0.2);
+    outline: none;
+}
+
+/* --- Validação de rádio buttons --- */
+.is-invalid-radio-label {
+    border: 1px solid var(--brand-red) !important;
+    border-radius: var(--radius-sm);
+    padding: 5px;
+    background-color: rgba(210, 43, 43, 0.05);
+}
+
+/* --- Título de seção de formulário --- */
+.section-title {
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--gray-4);
+    margin-bottom: 0.5rem;
+    margin-top: 1.5rem;
+}
+
+/* --- Rádio botões minimalistas (bolinhas) --- */
+.minimal-radio-group {
+    border: none !important;
+}
+.minimal-radio-group .form-check-input {
+    float: none;
+    margin-right: 0.5rem;
+    width: 1.2rem;
+    height: 1.2rem;
+    border: 1px solid var(--gray-3);
+}
+.minimal-radio-group .form-check-input:checked {
+    background-color: var(--brand-orange);
+    border-color: var(--brand-orange);
+}
+.minimal-radio-group .form-check-label {
+    font-weight: 400;
+    color: var(--gray-5);
+}
+
+/* --- Wizard: Indicador de passos --- */
+.step-indicator {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 30px;
+    padding: 0;
+    position: relative;
+}
+.step-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+}
+.step-circle {
+    width: 35px;
+    height: 35px;
+    border: 2px solid var(--gray-3);
+    background-color: #fff;
+    color: var(--gray-3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-weight: bold;
+    transition: all var(--transition-base);
+}
+.step-item.active .step-circle {
+    border-color: var(--brand-gold);
+    color: #1A1A1A;
+}
+.step-item.completed .step-circle {
+    background-color: var(--brand-gold);
+    border-color: var(--brand-gold);
+    color: #fff;
+}
+.step-label {
+    font-size: 0.7rem;
+    font-weight: 500;
+    margin-top: 8px;
+    color: #666;
+    white-space: nowrap;
+}
+.step-item.active .step-label {
+    color: #1A1A1A;
+    font-weight: 700;
+}
+.step-item.completed .step-label {
+    color: var(--brand-gold);
+}
+/* Remove linhas conectoras (simplificado) */
+.step-line { display: none !important; }

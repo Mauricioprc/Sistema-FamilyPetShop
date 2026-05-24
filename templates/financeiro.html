@@ -1,0 +1,271 @@
+{% extends 'base.html' %}
+{% block title %}Financeiro — Family Pet Shop{% endblock %}
+{% block content %}
+
+<div class="container-fluid py-4">
+
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+        <div>
+            <h1 class="h3 fw-semibold text-brand-blue mb-1">Controlo Financeiro</h1>
+            <p class="text-secondary fw-medium mb-0" style="font-size: 0.95rem;">Gestão de recebimentos, atrasos e previsões</p>
+        </div>
+    </div>
+
+    <div class="row mb-4 g-4">
+        <div class="col-md-6">
+            <a href="{{ url_for('financeiro.listar', status='vencidos') }}" class="text-decoration-none">
+                <div class="card bg-white border-0 shadow-sm rounded-4 h-100 transition-all hover-solid" style="cursor: pointer;">
+                    <div class="card-body p-4 d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="bg-danger-subtle p-2 rounded-circle me-3 d-flex">
+                                    <i class="bi bi-exclamation-triangle text-danger fs-5"></i>
+                                </div>
+                                <span class="text-secondary fw-medium small">Total em Atraso (Global)</span>
+                            </div>
+                            <h3 class="fw-semibold text-dark mb-0">R$ {{ "{:,.2f}".format(total_atrasado | default(0)).replace(',', 'X').replace('.', ',').replace('X', '.') }}</h3>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-light text-danger border border-danger-subtle rounded-pill px-3 py-2 fw-medium small">
+                                Cobrar <i class="bi bi-chevron-right ms-1"></i>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card bg-white border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4 d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="bg-success-subtle p-2 rounded-circle me-3 d-flex">
+                                <i class="bi bi-graph-up-arrow text-success fs-5"></i>
+                            </div>
+                            <span class="text-secondary fw-medium small">Recebimentos Futuros (Previsão)</span>
+                        </div>
+                        <h3 class="fw-semibold text-dark mb-0">R$ {{ "{:,.2f}".format(total_previsao_avulsos | default(0)).replace(',', 'X').replace('.', ',').replace('X', '.') }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mb-5">
+        <form method="GET" action="{{ url_for('financeiro.listar') }}" id="form-filtros">
+            
+            <div class="bg-white p-2 rounded-pill shadow-sm border border-light mb-3 d-flex align-items-center">
+                <div class="input-group input-group-lg border-0 bg-transparent">
+                    <span class="input-group-text bg-transparent border-0 text-muted ps-3 pe-2">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" name="q" class="form-control border-0 shadow-none bg-transparent fs-6 text-dark" placeholder="Procurar por tutor ou pet..." value="{{ query or '' }}">
+                </div>
+                <button type="submit" class="btn btn-primary-custom rounded-pill px-5 fw-medium shadow-sm d-none d-md-block">
+                    Buscar
+                </button>
+                <button type="submit" class="btn btn-primary-custom rounded-circle shadow-sm d-md-none me-1" style="width: 44px; height: 44px; padding: 0;">
+                    <i class="bi bi-search"></i>
+                </button>
+            </div>
+
+            <div class="d-flex flex-wrap gap-3 align-items-center px-1">
+                
+                <div class="d-flex align-items-center bg-white rounded-pill border border-light shadow-sm px-3 py-1 transition-all hover-solid">
+                    <label class="text-muted small fw-medium me-1 mb-0"></i>Serviço:</label>
+                    <select name="vista" class="form-select form-select-sm border-0 bg-transparent shadow-none text-dark fw-medium ps-1" style="cursor: pointer; min-width: 100px;" onchange="document.getElementById('form-filtros').submit()">
+                        <option value="todos" {% if vista_ativa == 'todos' %}selected{% endif %}>Todos</option>
+                        <option value="atendimentos" {% if vista_ativa == 'atendimentos' %}selected{% endif %}>Avulsos</option>
+                        <option value="pacotes" {% if vista_ativa == 'pacotes' %}selected{% endif %}>Pacotes</option>
+                    </select>
+                </div>
+
+                <div class="d-flex align-items-center bg-white rounded-pill border border-light shadow-sm px-3 py-1 transition-all hover-solid">
+                    <label class="text-muted small fw-medium me-1 mb-0"></i>Status:</label>
+                    <select name="status" class="form-select form-select-sm border-0 bg-transparent shadow-none text-dark fw-medium ps-1" style="cursor: pointer; min-width: 110px;" onchange="document.getElementById('form-filtros').submit()">
+                        <option value="todos" {% if status_ativo == 'todos' %}selected{% endif %}>Qualquer</option>
+                        <option value="pendentes" {% if status_ativo == 'pendentes' %}selected{% endif %}>A Receber</option>
+                        <option value="vencidos" {% if status_ativo == 'vencidos' %}selected{% endif %}>Em Atraso</option>
+                        <option value="pagos" {% if status_ativo == 'pagos' %}selected{% endif %}>Pagos</option>
+                    </select>
+                </div>
+
+                <div class="d-flex align-items-center bg-white rounded-pill border border-light shadow-sm px-3 py-1">
+                    <label class="text-muted small fw-medium me-2 mb-0"></i>De:</label>
+                    <input type="date" name="data_inicio" class="form-control form-control-sm border-0 bg-transparent shadow-none text-dark fw-medium p-0" style="width: 110px;" value="{{ data_inicio or '' }}" onchange="document.getElementById('form-filtros').submit()">
+                </div>
+
+                <div class="d-flex align-items-center bg-white rounded-pill border border-light shadow-sm px-3 py-1">
+                    <label class="text-muted small fw-medium me-2 mb-0">Até:</label>
+                    <input type="date" name="data_fim" class="form-control form-control-sm border-0 bg-transparent shadow-none text-dark fw-medium p-0" style="width: 110px;" value="{{ data_fim or '' }}" onchange="document.getElementById('form-filtros').submit()">
+                </div>
+
+                <a href="{{ url_for('financeiro.listar') }}" class="btn btn-link text-secondary btn-sm text-decoration-none fw-medium ms-auto">
+                    Limpar <i class="bi bi-x-circle ms-1"></i>
+                </a>
+
+            </div>
+        </form>
+    </div>
+
+    <div class="d-flex justify-content-end mb-4">
+        <div class="d-inline-flex align-items-center bg-white border border-secondary-subtle shadow-sm rounded-pill px-4 py-2">
+            <i class="bi bi-calculator text-muted me-2 fs-5"></i>
+            <span class="text-secondary fw-medium me-2">Soma desta lista:</span>
+            <strong class="text-dark fs-5">R$ {{ "{:,.2f}".format(total_exibido | default(0)).replace(',', 'X').replace('.', ',').replace('X', '.') }}</strong>
+        </div>
+    </div>
+
+    {% if atendimentos %}
+    <div class="mb-5">
+        <h5 class="fw-semibold text-brand-blue mb-4">
+            <span class="badge bg-light text-secondary border rounded-circle me-2">{{ atendimentos|length }}</span> Atendimentos Avulsos
+        </h5>
+        
+        <div class="row g-4">
+            {% for a in atendimentos %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card bg-white border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-body p-4">
+                        
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h6 class="fw-semibold text-brand-blue mb-1">{{ a.cliente.nome_tutor }}</h6>
+                                <p class="text-secondary small fw-medium mb-0">Pet: {{ a.cliente.nome_pet }}</p>
+                            </div>
+                            <span class="fw-semibold text-dark fs-5">R$ {{ "{:,.2f}".format(a.preco or 0).replace(',', 'X').replace('.', ',').replace('X', '.') }}</span>
+                        </div>
+
+                        <hr class="opacity-10 my-3">
+
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-secondary small fw-medium">Serviço:</span>
+                            <span class="fw-medium text-dark">{{ a.nome_servico }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <span class="text-secondary small fw-medium">Data:</span>
+                            {% if a.data < hoje and status_ativo != 'pagos' %}
+                                <span class="fw-semibold text-danger">{{ a.data.strftime('%d/%m/%Y') }}</span>
+                            {% else %}
+                                <span class="fw-medium text-dark">{{ a.data.strftime('%d/%m/%Y') }}</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-flex gap-2 mt-auto">
+                            {% if status_ativo != 'pagos' %}
+                                <a href="{{ url_for('financeiro.registrar_pagamento', atendimento_id=a.id) }}" class="btn btn-green-custom border text-white fw-medium btn-sm w-100 rounded-pill shadow-sm transition-all ">
+                                    <i class="bi bi-check-circle me-1"></i> Receber
+                                </a>
+                                
+                                {% if a.data < hoje %}
+                                    {% set msg_cobrar_a = "Olá " ~ a.cliente.nome_tutor ~ "! Gostaríamos de lembrar do acerto do atendimento do(a) " ~ a.cliente.nome_pet ~ " realizado no dia " ~ a.data.strftime('%d/%m') ~ " (R$ " ~ "%.2f"|format(a.preco) ~ "). Qualquer dúvida, estamos à disposição!" %}
+                                    <a href="https://wa.me/55{{ a.cliente.telefone | replace(' ', '') | replace('-', '') | replace('(', '') | replace(')', '') }}?text={{ msg_cobrar_a | replace(' ', '%20') }}" 
+                                       target="_blank" class="btn btn-light border text-danger btn-sm px-3 rounded-pill shadow-sm transition-all hover-solid" title="Cobrar via WhatsApp">
+                                        <i class="bi bi-whatsapp"></i>
+                                    </a>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill w-100 py-2 fw-medium">
+                                    <i class="bi bi-check2-all me-1"></i> Pagamento Concluído
+                                </span>
+                            {% endif %}
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if pacotes %}
+    <div class="mb-5">
+        <h5 class="fw-semibold text-brand-blue mb-4">
+            <span class="badge bg-light text-secondary border rounded-circle me-2">{{ pacotes|length }}</span> Pacotes Fechados
+        </h5>
+        
+        <div class="row g-4">
+            {% for p in pacotes %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card bg-white border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-body p-4">
+                        
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h6 class="fw-semibold text-brand-blue mb-1">{{ p.cliente.nome_tutor }}</h6>
+                                <p class="text-secondary small fw-medium mb-0">Pet: {{ p.cliente.nome_pet }}</p>
+                            </div>
+                            <span class="fw-semibold text-dark fs-5">R$ {{ "{:,.2f}".format(p.preco_pacote or 0).replace(',', 'X').replace('.', ',').replace('X', '.') }}</span>
+                        </div>
+
+                        <hr class="opacity-10 my-3">
+
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-secondary small fw-medium">Pacote:</span>
+                            <span class="badge bg-light text-black border rounded-pill px-3 py-1 fw-medium">{{ p.creditos_totais }}x {{ p.nome_servico }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <span class="text-secondary small fw-medium">Vencimento:</span>
+                            {% if p.data_vencimento and p.data_vencimento < hoje and status_ativo != 'pagos' %}
+                                <span class="fw-semibold text-danger">{{ p.data_vencimento.strftime('%d/%m/%Y') }}</span>
+                            {% else %}
+                                <span class="fw-medium text-dark">{{ p.data_vencimento.strftime('%d/%m/%Y') if p.data_vencimento else 'N/A' }}</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-flex gap-2 mt-auto">
+                            {% if status_ativo != 'pagos' %}
+                                <a href="{{ url_for('financeiro.registrar_pagamento_pacote', pacote_id=p.id) }}" class="btn btn-green-custom border text-white fw-medium btn-sm w-100 rounded-pill shadow-sm transition-all ">
+                                    <i class="bi bi-cash-stack me-1"></i> Receber Pacote
+                                </a>
+                                
+                                {% if p.data_vencimento and p.data_vencimento < hoje %}
+                                    {% set msg_cobrar_p = "Olá " ~ p.cliente.nome_tutor ~ "! Gostaríamos de lembrar do acerto do pacote do " ~ p.cliente.nome_pet ~ " (R$ " ~ "%.2f"|format(p.preco_pacote) ~ "). Qualquer dúvida, estamos à disposição!" %}
+                                    <a href="https://wa.me/55{{ p.cliente.telefone | replace(' ', '') | replace('-', '') | replace('(', '') | replace(')', '') }}?text={{ msg_cobrar_p | replace(' ', '%20') }}" 
+                                       target="_blank" class="btn btn-light border text-danger btn-sm px-3 rounded-pill shadow-sm transition-all hover-solid" title="Cobrar via WhatsApp">
+                                        <i class="bi bi-whatsapp"></i>
+                                    </a>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill w-100 py-2 fw-medium">
+                                    <i class="bi bi-check-all me-1"></i> Pagamento Concluído
+                                </span>
+                            {% endif %}
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if not atendimentos and not pacotes %}
+    <div class="text-center py-5">
+        <div class="empty-state d-flex flex-column align-items-center justify-content-center p-5 bg-white rounded-4 shadow-sm border-0">
+            <div class="bg-light rounded-circle d-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                <i class="bi bi-wallet2 text-muted" style="font-size: 2rem;"></i>
+            </div>
+            <h5 class="text-dark fw-semibold mb-1">Nenhum registo encontrado</h5>
+            <p class="text-secondary mb-0">Nenhum pagamento encontrado para os filtros selecionados!</p>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+<style>
+.hover-solid:hover {
+    background-color: #f8f9fa !important;
+    filter: brightness(0.95);
+}
+/* Remove o contorno azul chato dos inputs/selects ao clicar */
+.form-control:focus, .form-select:focus {
+    box-shadow: none !important;
+    outline: none !important;
+}
+</style>
+{% endblock %}

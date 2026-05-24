@@ -1,0 +1,583 @@
+{% extends 'base.html' %}
+{% block title %}{{ cliente.nome_pet }} — Ficha do Cliente{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('clientes.editar', cliente_id=cliente.id) }}" class="btn btn-outline-secondary rounded-pill px-3 shadow-sm fw-medium">
+                <i class="bi bi-pencil-square me-1"></i> Editar Ficha
+            </a>
+            {# O botão só aparece se não houver NADA vinculado ao cliente #}
+            {% if not atendimentos_agendados and not atendimentos_realizados and not atendimentos_faltas and not pacotes %}
+            <button type="button" class="btn btn-outline-danger rounded-pill px-3 shadow-sm fw-medium" data-bs-toggle="modal" data-bs-target="#modalExcluirCliente">
+                <i class="bi bi-trash me-1"></i> Excluir Cliente
+            </button>
+            {% endif %}
+            <a href="{{ url_for('clientes.listar') }}" class="btn btn-light rounded-pill px-3 border shadow-sm fw-medium text-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Voltar
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-4 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 text-center overflow-hidden">
+                <div style="height: 80px; background: linear-gradient(150deg, var(--brand-blue), #d8871d);"></div>
+                
+                <div class="card-body pt-0" style="margin-top: -40px;">
+                    <div class="mb-3">
+                        <div class="bg-white d-inline-block p-2 rounded-circle shadow">
+                            {% if cliente.tipo_pet|lower == 'gato' %}
+                                <img src="{{ url_for('static', filename='mascote_cat.png') }}" alt="Gato" style="width: 85px; height: 85px; object-fit: contain;">
+                            {% else %}
+                                <img src="{{ url_for('static', filename='mascote_dog.png') }}" alt="Cachorro" style="width: 85px; height: 85px; object-fit: contain;">
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <h3 class="fw-semibold text-brand-blue mb-1">{{ cliente.nome_pet }}</h3>
+                    <span class="badge bg-light text-secondary border mb-3 rounded-pill px-3 py-2 fw-medium">Tutor(a): {{ cliente.nome_tutor }}</span>
+                     
+                        {% if dias_ausente > 30 %}
+                        <div class="card border-0 bg-warning-subtle rounded-3 mb-3 shadow-sm border border-warning-subtle">
+                            <div class="card-body p-3">
+                                <div class="text-warning-emphasis small fw-medium mb-1">
+                                    <i class="bi bi-eye me-1"></i> Pet Sumido
+                                </div>
+                                <span class="small text-warning-emphasis d-block lh-sm">
+                                    Faz <strong>{{ dias_ausente }} dias</strong> que o {{ cliente.nome_pet }} não nos visita. Que tal enviar uma mensagem?
+                                </span>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if total_divida > 0 %}
+                        <div class="card border-0 bg-danger-subtle rounded-3 mb-3 shadow-sm">
+                            <div class="card-body p-3">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <div class="text-danger small fw-medium mb-1">
+                                            <i class="bi bi-exclamation-triangle-fill me-1"></i> Débito Pendente (+ 10 dias)
+                                        </div>
+                                        <h4 class="text-danger fw-semibold mb-0">R$ {{ "%.2f"|format(total_divida)|replace('.', ',') }}</h4>
+                                    </div>
+                                    
+                                    {% set telefone_limpo = cliente.telefone | replace(' ', '') | replace('-', '') | replace('(', '') | replace(')', '') %}
+                                    <button onclick="enviarCobrancaWpp('{{ telefone_limpo }}')" class="btn btn-sm btn-success fw-bold px-3 rounded-pill shadow-sm">
+                                        <i class="bi bi-whatsapp"></i> Cobrar
+                                    </button>
+                                </div>
+                                
+                                <button class="btn btn-link btn-sm text-danger text-decoration-none fw-medium p-0 mt-2" type="button" data-bs-toggle="collapse" data-bs-target="#detalhesDebito">
+                                    Ver detalhes <i class="bi bi-chevron-down"></i>
+                                </button>
+                                
+                                <div class="collapse mt-2" id="detalhesDebito">
+                                    <ul class="list-unstyled small text-start mb-0 bg-white p-2 rounded-2 border border-danger-subtle scrollable-section" style="max-height: 150px;">
+                                        
+                                        {# 1. Lista Atendimentos Avulsos com 10+ dias de atraso #}
+                                        {% for atendimento in atendimentos_realizados if atendimento.status_pagamento == 'Pendente' and atendimento.data <= limite_atraso %}
+                                            <li class="py-1 d-flex justify-content-between border-bottom border-danger-subtle last-child-no-border">
+                                                <span class="text-secondary">
+                                                    <i class="bi bi-calendar-event me-1"></i> {{ atendimento.data.strftime('%d/%m') }} - {{ atendimento.nome_servico }}
+                                                </span>
+                                                <span class="fw-medium text-danger">R$ {{ "%.2f"|format(atendimento.preco or 0)|replace('.', ',') }}</span>
+                                            </li>
+                                        {% endfor %}
+
+                                        {# 2. Lista Pacotes com 10+ dias de atraso #}
+                                        {% for pacote in pacotes if pacote.status_pagamento == 'Pendente' and pacote.data_vencimento <= limite_atraso %}
+                                            <li class="py-1 d-flex justify-content-between border-bottom border-danger-subtle last-child-no-border">
+                                                <span class="text-secondary">
+                                                    <i class="bi bi-box-seam me-1"></i> {{ pacote.data_vencimento.strftime('%d/%m') if pacote.data_vencimento else 'S/D' }} - Pacote: {{ pacote.nome_servico }}
+                                                </span>
+                                                <span class="fw-medium text-danger">R$ {{ "%.2f"|format(pacote.preco_pacote or 0)|replace('.', ',') }}</span>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+
+                                <textarea id="textoCobranca" style="display: none;">
+                        Olá {{ cliente.nome_tutor }}! Tudo bem? 🐾
+                        Passando para fazer uma atualização da ficha do(a) {{ cliente.nome_pet }}. 
+                        Constam os seguintes valores em aberto há alguns dias:
+
+                        {% for pacote in cliente.pacotes_em_atraso -%}
+                        📦 *Pacote: {{ pacote.nome_servico }}* (Vencimento: {{ pacote.data_vencimento.strftime('%d/%m/%Y') }})
+                        {% for at in pacote.atendimentos.order_by('data').all() -%}
+                        • {{ at.data.strftime('%d/%m') }} - {% if at.status_presenca == 'Presente' %}✅ Já realizou{% elif at.status_presenca == 'Faltou' %}❌ Faltou{% else %}⏳ Agendado{% endif %}
+                        {% endfor %}
+                        {% endfor %}
+
+                        {% for avulso in cliente.atendimentos_avulsos_em_atraso -%}
+                        ✂️ *Avulso: {{ avulso.nome_servico }}* realizado em {{ avulso.data.strftime('%d/%m/%Y') }}
+                        {% endfor %}
+
+                        *Total pendente: R$ {{ "%.2f"|format(total_divida)|replace('.', ',') }}*
+
+                        Consegue confirmar se o pagamento já foi feito ou prefere que eu envie a chave PIX? Qualquer dúvida, estou à disposição!
+                                </textarea>
+
+                            </div>
+                        </div>
+                        {% endif %}
+
+                    <a href="https://wa.me/55{{ cliente.telefone|replace('(', '')|replace(')', '')|replace('-', '')|replace(' ', '') }}" 
+                       target="_blank" class="btn btn-outline-primary-custom w-100 rounded-pill py-2 mb-4 d-flex align-items-center justify-content-center gap-2 transition-all hover-solid">
+                        <i class="bi bi-whatsapp"></i> 
+                        <span class="fw-medium small">{{ cliente.telefone }}</span>
+                    </a>
+
+                    <div class="text-start mt-4 pt-3 border-top">
+                        <h6 class="text-muted fw-medium small mb-3"><i class="bi bi-clipboard-data me-1"></i> Ficha Técnica</h6>
+                        <div class="d-flex justify-content-between align-items-center mb-2 bg-light p-2 rounded-2">
+                            <span class="text-muted small">Raça:</span>
+                            <span class="fw-medium text-brand-blue small">{{ cliente.raca_pet or 'Não informada' }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-2 bg-light p-2 rounded-2">
+                            <span class="text-muted small">Peso:</span>
+                            <span class="fw-medium text-brand-blue small">{{ cliente.peso_pet or 'S/N' }} kg</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-2 bg-light p-2 rounded-2">
+                            <span class="text-muted small">Sexo:</span>
+                            <span class="fw-medium text-brand-blue small">{{ cliente.sexo_pet or 'Não informado' }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-2 bg-light p-2 rounded-2">
+                            <span class="text-muted small">Castrado:</span>
+                            <span class="fw-medium text-brand-blue small">{{ cliente.castrado or 'Não informado' }}</span>
+                        </div>
+                        
+                        {% if cliente.endereco == "Não" %}
+                        <div class="d-flex justify-content-between align-items-center mb-2 bg-light p-2 rounded-2">
+                            <span class="text-muted small">Cliente leva</span>
+                        </div>
+                        {% endif %}
+                        <div class="mt-3">
+                            <span class="text-muted small d-block mb-2">Temperamento:</span>
+                            <span class="badge w-100 py-2 rounded-pill shadow-sm fw-medium {% if 'Bravo' in (cliente.temperamento or '') %}bg-orange text-white{% else %}bg-blue text-dark{% endif %}">
+                                {{ cliente.temperamento or 'Não informado' }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8 col-xl-9">
+            
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-header bg-white border-bottom py-3 px-4 rounded-top-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="fw-semibold text-brand-blue mb-0">
+                            <i class="bi bi-calendar2-heart me-2 " style="color: #e58226;"></i>Próximas Visitas
+                        </h5>
+                        <a href="{{ url_for('agenda.novo', cliente_id=cliente.id) }}" class="btn btn-primary-custom btn-sm rounded-pill px-4 fw-medium shadow-sm">
+                            <i class="bi bi-plus-lg me-1"></i> Agendar
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body px-4 pt-3">
+                    {% if atendimentos_agendados %}
+                        <div class="scrollable-section pe-2">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="text-muted small fw-medium bg-light" style="position: sticky; top: 0; z-index: 1;">
+                                        <tr>
+                                            <th class="rounded-start-3">Data</th>
+                                            <th class="text-center">Serviço</th>
+                                            <th class="text-center">Valor/Pacote</th>
+                                            <th class="text-end rounded-end-3">Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for agendamento in atendimentos_agendados %}
+                                        <tr class="border-bottom">
+                                            <td style="width: 15%;">
+                                                <div class="text-center bg-light p-2 rounded-3 shadow-sm border border-white">
+                                                    <div class="fw-semibold text-brand-blue fs-5 lh-1">{{ agendamento.data.strftime('%d') }}</div>
+                                                    <div class="small text-secondary fw-medium" style="font-size: 0.75rem;">{{ agendamento.data.strftime('%b') }}</div>
+                                                </div>
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="fw-medium text-dark mb-1 fs-6">{{ agendamento.nome_servico }}</div>
+                                            </td>
+                                            <td class="text-center">
+                                                {% if agendamento.pacote_id %}
+                                                    <span class="badge px-3 py-2 shadow-sm fw-medium" style="background-color: #0c233f; color: white; ">
+                                                        <i class=" bi bi-box-seam me-1"></i> Pacote
+                                                    </span>
+                                                    {% else %}
+                                                    <span class="fw-medium fs-6" style="color: #0c233f;">R$ {{ "%.2f"|format(agendamento.preco or 0)|replace('.', ',') }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-end" style="width: 20%;">
+                                                <button type="button" class="btn btn-light btn-sm rounded-circle border shadow-sm mx-1" 
+                                                        onclick="abrirModalEditar('{{ agendamento.id }}', '{{ agendamento.data }}', '{{ agendamento.nome_servico }}', '{{ agendamento.preco or 0 }}', '{{ agendamento.observacao or "" }}', '{{ "true" if agendamento.pacote_id else "false" }}', '{{ agendamento.status_presenca }}')"
+                                                        title="Editar">
+                                                    <i class="bi bi-pencil" style="color: #0c233f;"></i>
+                                                </button>
+                                                
+                                                <button type="button" class="btn btn-light btn-sm rounded-circle border shadow-sm mx-1" 
+                                                        onclick="confirmarExclusao('{{ agendamento.id }}', '{{ agendamento.nome_servico }}', '{{ agendamento.data.strftime("%d/%m/%Y") }}')"
+                                                        title="Excluir">
+                                                    <i class="bi bi-trash" style="color: red;"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5 border rounded-4 border-dashed bg-light">
+                            <i class="bi bi-calendar-x text-muted fs-1 mb-2 d-block opacity-50"></i>
+                            <p class="text-muted mb-0 fw-medium">Nenhum agendamento futuro para {{ cliente.nome_pet }}.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <div class="card-body p-0">
+                    <ul class="nav nav-tabs border-bottom-0 bg-light p-2 gap-2" id="pills-tab" role="tablist">
+                        <li class="nav-item">
+                            <button class="nav-link active border-20 rounded-3 fw-medium px-4 py-2 text-dark" data-bs-toggle="pill" data-bs-target="#hist-atendimentos">
+                                <i class="bi bi-clock-history me-2" style="color: #e58226;"></i>Histórico
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link border-20 rounded-3 fw-medium px-4 py-2 text-dark" data-bs-toggle="pill" data-bs-target="#hist-pacotes">
+                                <i class="bi bi-box-seam me-2 " style="color: #e58226;"></i>Pacotes / Créditos
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content p-4">
+                        <div class="tab-pane fade show active" id="hist-atendimentos">
+                            {% set historico_completo = (atendimentos_realizados + atendimentos_faltas) | sort(attribute='data', reverse=True) %}
+                            
+                            {% if historico_completo %}
+                            <div class="row mb-3 pb-3 border-bottom align-items-end g-2">
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-medium text-muted mb-1"><i class="bi bi-calendar-event me-1"></i>Data Inicial</label>
+                                    <input type="date" id="filtroDataInicio" class="form-control form-control-sm rounded-pill shadow-sm border-0 bg-light text-secondary">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-medium text-muted mb-1"><i class="bi bi-calendar-event me-1"></i>Data Final</label>
+                                    <input type="date" id="filtroDataFim" class="form-control form-control-sm rounded-pill shadow-sm border-0 bg-light text-secondary">
+                                </div>
+                                <div class="col-md-4 d-flex gap-2">
+                                    <button onclick="filtrarHistorico()" class="btn btn-sm rounded-pill fw-medium shadow-sm flex-grow-1" style="background-color: #0c233f; color: white;">
+                                        <i class="bi bi-search me-1"></i> Filtrar
+                                    </button>
+                                    <button onclick="limparFiltro()" class="btn btn-light btn-sm rounded-pill fw-medium shadow-sm border text-secondary" title="Limpar Filtros">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            {% if historico_completo %}
+                                <div class="scrollable-section pe-2">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover align-middle mb-0">
+                                            <thead class="small text-muted fw-medium bg-light" style="position: sticky; top: 0; z-index: 1;">
+                                                <tr>
+                                                    <th class="rounded-start-3">Data</th>
+                                                    <th>Serviço</th>
+                                                    <th>Total</th>
+                                                    <th>Presença</th>
+                                                    <th class="text-center rounded-end-3">Pagamento</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="corpoTabelaHistorico">
+                                                {% for item in historico_completo %}
+                                                <tr class="border-bottom linha-historico">
+                                                    <td class="text-dark small fw-medium" data-data-real="{{ item.data.strftime('%Y-%m-%d') }}">
+                                                        {{ item.data.strftime('%d/%m/%Y') }}
+                                                    </td>
+                                                    <td>
+                                                        <div class="fw-medium text-dark">{{ item.nome_servico }}</div>
+                                                    </td>
+                                                    <td class="fw-medium text-secondary">R$ {{ "%.2f"|format(item.preco or 0)|replace('.', ',') }}</td>
+                                                    <td>
+                                                        {% if item.status_presenca == 'Presente' %}
+                                                            <span class="badge fw-medium border px-3 py-2 rounded-pill" style="background-color: #0c233f; color: white;">Presente</span>
+                                                        {% else %}
+                                                            <span class="badge bg-danger-subtle fw-medium text-danger border border-danger-subtle px-3 py-2 rounded-pill">Faltou</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td class="text-center">
+                                                        {% if item.pacote_id %}
+                                                            <span class="badge fw-medium rounded-pill px-3 py-2 shadow-sm w-100" style="background-color: #0c233f; color: white;">Pacote</span>
+                                                        {% elif item.pago %}
+                                                            <span class="badge fw-medium rounded-pill px-3 py-2 shadow-sm w-100" style="background-color: #0c233f; color: white;">Pago</span>
+                                                        {% else %}
+                                                            <span class="badge fw-medium rounded-pill px-3 py-2 shadow-sm w-100" style="background-color: #e58226; color: white;">Pendente</span>
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                        <div id="mensagemSemResultados" class="text-center py-4 d-none">
+                                            <span class="text-muted small">Nenhum atendimento encontrado para este período.</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="text-center py-5 border rounded-4 border-dashed bg-light">
+                                    <i class="bi bi-journal-x fs-1 text-muted opacity-50 d-block mb-2"></i>
+                                    <p class="text-muted mb-0 fw-medium">Sem histórico registrado para este pet.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="tab-pane fade" id="hist-pacotes">
+                            <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+                                <h6 class="fw-semibold mb-0 text-brand-blue"><i class="bi bi-boxes me-2"></i>Pacotes Ativos</h6>
+                                <a href="{{ url_for('pacotes.novo', cliente_id=cliente.id) }}" class="btn btn-primary-custom btn-sm rounded-pill fw-medium px-3 shadow-sm">
+                                    <i class="bi bi-cart-plus me-1"></i> Vender Pacote
+                                </a>
+                            </div>
+                            {% if pacotes %}
+                                <div class="scrollable-section pe-2">
+                                    <div class="row g-3">
+                                        {% for pacote in pacotes %}
+                                            <div class="col-md-6">
+                                                {% include 'includes/card_pacote_cliente.html' %}
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="text-center py-5 border rounded-4 border-dashed bg-light">
+                                    <i class="bi bi-box-seam text-muted fs-1 d-block mb-2 opacity-50"></i>
+                                    <p class="text-muted mb-0 fw-medium">Este cliente não possui pacotes ativos no momento.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalExcluirAtendimento" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold text-danger">Confirmar Exclusão</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <i class="bi bi-exclamation-triangle text-danger display-1 mb-3"></i>
+                <p class="text-secondary">Você tem certeza que deseja excluir o atendimento de <br>
+                <strong id="excluir-info" class="text-dark"></strong>?</p>
+                <p class="small text-muted">Se for um serviço de pacote, o crédito será devolvido ao cliente.</p>
+            </div>
+            <div class="modal-footer border-0">
+                <form id="formExcluir" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="status_presenca" id="edit-status">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger rounded-pill px-4">Sim, Excluir</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEditarAtendimento" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <form id="formEditar" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold">Editar Agendamento</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label text-secondary small fw-bold">Data do Atendimento</label>
+                        <input type="date" name="data" id="edit-data" class="form-control rounded-3" required>
+                    </div>
+                    
+                    <div id="campos-avulsos">
+                        <div class="mb-3">
+                            <label class="form-label text-secondary small fw-bold">Nome do Serviço</label>
+                            <input type="text" name="nome_servico" id="edit-servico" class="form-control rounded-3">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-secondary small fw-bold">Preço (R$)</label>
+                            <input type="text" name="preco" id="edit-preco" class="form-control rounded-3 money-mask">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label text-secondary small fw-bold">Observações</label>
+                        <textarea name="observacao" id="edit-obs" class="form-control rounded-3" rows="2"></textarea>
+                    </div>
+
+                    <div id="aviso-pacote" class="alert alert-info py-2 small d-none">
+                        <i class="bi bi-info-circle me-1"></i> Este atendimento faz parte de um pacote. Só é possível alterar a data e observação.
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary-custom rounded-pill px-4">Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="modalExcluirCliente" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold text-danger">Confirmar Exclusão</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <i class="bi bi-person-x text-danger display-1 mb-3"></i>
+                <p class="text-secondary">Tem certeza que deseja excluir permanentemente o cliente <br>
+                <strong class="text-dark">{{ cliente.nome_tutor }} (Pet: {{ cliente.nome_pet }})</strong>?</p>
+                <p class="small text-muted">Esta ação não pode ser desfeita.</p>
+            </div>
+            <div class="modal-footer border-0">
+                <form action="{{ url_for('clientes.excluir', cliente_id=cliente.id) }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-toggle="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger rounded-pill px-4 shadow-sm">Sim, Excluir</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Estilos originais mantidos intactos */
+.last-child-no-border:last-child {
+    border-bottom: none !important;
+}
+.shadow-soft {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03) !important;
+}
+
+.scrollable-section {
+    max-height: 350px; 
+    overflow-y: auto;  
+}
+
+.scrollable-section::-webkit-scrollbar {
+    width: 6px;
+}
+.scrollable-section::-webkit-scrollbar-track {
+    background: #f8f9fa; 
+    border-radius: 10px;
+}
+.scrollable-section::-webkit-scrollbar-thumb {
+    background: #cdd4dc; 
+    border-radius: 10px;
+}
+.scrollable-section::-webkit-scrollbar-thumb:hover {
+    background: #0c233f; 
+}
+</style>
+
+<script>
+function confirmarExclusao(id, servico, data) {
+    const form = document.getElementById('formExcluir');
+    // Ajusta a URL para bater com a rota do agenda.py
+    form.action = `/atendimento/excluir/${id}`;
+    document.getElementById('excluir-info').innerText = `${servico} em ${data}`;
+    
+    new bootstrap.Modal(document.getElementById('modalExcluirAtendimento')).show();
+}
+
+function abrirModalEditar(id, data, servico, preco, obs, isPacote, status) {
+    const form = document.getElementById('formEditar');
+    form.action = `/atendimento/editar/${id}`;
+    
+    // Preenche os campos
+    document.getElementById('edit-data').value = data;
+    document.getElementById('edit-servico').value = servico;
+    document.getElementById('edit-preco').value = preco;
+    document.getElementById('edit-obs').value = obs;
+    
+    // Alimenta o campo obrigatório que o Flask exige
+    document.getElementById('edit-status').value = status;
+
+    // Se for pacote, desabilita campos que não podem mudar
+    const camposAvulsos = document.getElementById('campos-avulsos');
+    const avisoPacote = document.getElementById('aviso-pacote');
+
+    if (isPacote === "true") {
+        camposAvulsos.classList.add('d-none');
+        avisoPacote.classList.remove('d-none');
+    } else {
+        camposAvulsos.classList.remove('d-none');
+        avisoPacote.classList.add('d-none');
+    }
+
+    new bootstrap.Modal(document.getElementById('modalEditarAtendimento')).show();
+}
+
+function filtrarHistorico() {
+    const dataInicio = document.getElementById('filtroDataInicio').value;
+    const dataFim = document.getElementById('filtroDataFim').value;
+    
+    const linhas = document.querySelectorAll('.linha-historico');
+    let resultadosEncontrados = 0;
+
+    linhas.forEach(linha => {
+        const celulaData = linha.querySelector('td:first-child');
+        const dataLinha = celulaData.getAttribute('data-data-real');
+        
+        let mostrar = true;
+
+        if (dataInicio && dataLinha < dataInicio) {
+            mostrar = false;
+        }
+        if (dataFim && dataLinha > dataFim) {
+            mostrar = false;
+        }
+
+        if (mostrar) {
+            linha.style.display = '';
+            resultadosEncontrados++;
+        } else {
+            linha.style.display = 'none';
+        }
+    });
+
+    const msgVazia = document.getElementById('mensagemSemResultados');
+    if (resultadosEncontrados === 0) {
+        msgVazia.classList.remove('d-none');
+    } else {
+        msgVazia.classList.add('d-none');
+    }
+}
+
+function limparFiltro() {
+    document.getElementById('filtroDataInicio').value = '';
+    document.getElementById('filtroDataFim').value = '';
+    filtrarHistorico();
+}
+
+function enviarCobrancaWpp(telefone) {
+    // Lê o texto que o nosso Jinja montou no textarea
+    const textarea = document.getElementById('textoCobranca');
+    if (!textarea) return;
+    
+    const mensagem = textarea.value.trim();
+    
+    // Abre a janela do WhatsApp já com o texto formatado e codificado
+    window.open(`https://wa.me/55${telefone}?text=${encodeURIComponent(mensagem)}`, '_blank');
+}
+</script>
+{% endblock %}

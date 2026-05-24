@@ -1,0 +1,53 @@
+{# =============================================================
+   components/card.html — Card genérico com variantes
+   
+   Uso:
+   {% from 'components/card.html' import card, stat_card %}
+   {% call card(title='Pacotes', icon='bi-box-seam') %}
+     Conteúdo aqui
+   {% endcall %}
+   ============================================================= #}
+
+{% macro card(title='', icon='', extra_class='', header_class='') %}
+  <div class="card shadow-sm mb-4 {{ extra_class }}">
+    {% if title %}
+    <div class="card-header {{ header_class }}">
+      {% if icon %}<i class="bi {{ icon }} me-2"></i>{% endif %}
+      <strong>{{ title }}</strong>
+    </div>
+    {% endif %}
+    <div class="card-body">
+      {{ caller() }}
+    </div>
+  </div>
+{% endmacro %}
+
+
+{% macro stat_card(label, value, icon='', color='orange') %}
+  {% set color_map = {
+    'orange': 'var(--brand-orange)',
+    'blue':   'var(--brand-blue)',
+    'green':  'var(--brand-green)',
+    'red':    'var(--brand-red)'
+  } %}
+  <div class="card text-center shadow-sm h-100">
+    <div class="card-body">
+      {% if icon %}
+        <i class="bi {{ icon }} fs-2" style="color: {{ color_map.get(color, 'var(--brand-orange)') }};"></i>
+      {% endif %}
+      <h4 class="fw-bold mt-2" style="color: {{ color_map.get(color, 'var(--brand-orange)') }};">{{ value }}</h4>
+      <p class="text-muted mb-0 small">{{ label }}</p>
+    </div>
+  </div>
+{% endmacro %}
+
+
+{% macro badge(label, color='orange') %}
+  {% set color_map = {
+    'orange': 'btn-orange-custom',
+    'blue':   'btn-primary-custom',
+    'green':  'btn-green-custom',
+    'red':    'btn-red-custom'
+  } %}
+  <span class="badge {{ color_map.get(color, 'btn-orange-custom') }}">{{ label }}</span>
+{% endmacro %}

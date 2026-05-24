@@ -1,0 +1,277 @@
+/* ==========================================================
+   CARDS.CSS — Variantes de cards do sistema
+   ========================================================== */
+
+/* --- Card genérico com hover --- */
+.card-hover {
+    transition: transform var(--transition-base), box-shadow var(--transition-base);
+}
+.card-hover:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* --- Card "Nossa Família" --- */
+.card-about-us {
+    background-color: var(--gray-1);
+    border-radius: 20px;
+    transition: transform var(--transition-base);
+}
+.card-about-us:hover { transform: translateY(-5px); }
+.card-about-img { max-height: 400px; object-fit: cover; }
+
+/* --- Seletor de ícone (tipo de pet) --- */
+.icon-selector input[type="radio"] { display: none; }
+.icon-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 10px;
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+    width: 150px;
+    height: 150px;
+    border: 2px solid transparent;
+}
+.icon-option:hover { background-color: var(--gray-1); }
+.icon-circle {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    margin-bottom: 15px;
+    background-color: #f8f8f8;
+    border: 1px solid var(--gray-2);
+    overflow: visible;
+    position: relative;
+    transition: background-color var(--transition-fast);
+}
+.pet-icon-custom {
+    width: 120px;
+    height: 120px;
+    object-fit: contain;
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    transition: all var(--transition-fast);
+}
+.icon-selector input[type="radio"]:checked + .icon-option {
+    border-color: var(--brand-gold);
+    background-color: rgba(212, 175, 55, 0.05);
+}
+.icon-selector input[type="radio"]:checked + .icon-option .icon-circle {
+    background-color: var(--brand-gold);
+    border-color: var(--brand-gold);
+}
+.icon-selector input[type="radio"]:checked + .icon-option .pet-icon-custom {
+    transform: translateX(-50%) scale(1.1);
+}
+
+/* --- Cards de serviço principal --- */
+.service-card-main {
+    border: 2px solid #f0f0f0 !important;
+    background-color: #fff !important;
+    border-radius: 12px !important;
+    transition: all var(--transition-fast) !important;
+    padding: 15px 5px !important;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: var(--brand-blue) !important;
+    min-height: 190px;
+}
+.service-icon-box {
+    height: 90px;
+    width: 90px;
+    border-radius: 50%;
+    background-color: #f8f8f8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 10px auto;
+    overflow: visible;
+    position: relative;
+    transition: background-color var(--transition-fast);
+}
+.service-img-main {
+    height: 120px;
+    width: 120px;
+    object-fit: contain;
+    position: absolute;
+    bottom: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    transition: all var(--transition-fast);
+}
+.btn-check:checked + .service-card-main {
+    background-color: #fff !important;
+    border: 2px solid var(--brand-gold) !important;
+}
+.btn-check:checked + .service-card-main .service-icon-box {
+    background-color: var(--brand-gold) !important;
+}
+.btn-check:focus + .service-card-main {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+/* --- Cards de serviços opcionais (mini) --- */
+.optional-card-mini {
+    border: 2px solid #1A1A1A !important;
+    background-color: #f8f8f8 !important;
+    padding: 15px 8px !important;
+    height: 100%;
+    min-height: 130px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    color: #1A1A1A !important;
+    overflow: hidden;
+}
+.optional-img-mini {
+    height: 100px;
+    width: 100px;
+    object-fit: contain;
+    margin-bottom: 5px;
+    transition: all var(--transition-fast);
+    position: relative;
+    top: -5px;
+}
+input[type="checkbox"]:checked + .optional-card-mini {
+    border-color: var(--brand-gold) !important;
+    background-color: #fdfaf0 !important;
+    color: var(--brand-gold) !important;
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.2) !important;
+}
+input[type="checkbox"]:checked + .optional-card-mini .optional-img-mini {
+    transform: scale(1.1);
+}
+
+/* --- Card de resumo (passo 4) --- */
+.resumo-servico-card-custom {
+    background-color: #fff !important;
+    border: 1px solid var(--gray-2) !important;
+    border-left: 5px solid var(--brand-gold) !important;
+    border-radius: var(--radius-md);
+}
+#resumo-nome-pet { color: var(--brand-blue); font-weight: 600; }
+#resumo-preco { background-color: var(--brand-gold) !important; color: #fff !important; }
+
+/* --- Alerta azul informativo --- */
+.custom-blue-alert {
+    background-color: #fdfaf0 !important;
+    border: 1px solid var(--brand-gold) !important;
+    border-left: 5px solid var(--brand-gold) !important;
+    color: #1A1A1A !important;
+    border-radius: var(--radius-sm) !important;
+}
+.custom-blue-alert i { color: var(--brand-gold) !important; }
+
+/* --- Ticket moderno (passo 5) --- */
+.modern-ticket {
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: var(--shadow-md);
+    padding: 35px;
+    position: relative;
+    border: 1px solid #f0f0f0;
+}
+.ticket-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    gap: 15px;
+}
+.ticket-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--brand-gold-dark);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+.ticket-value { font-size: 1.15rem; font-weight: 600; color: #1A1A1A; line-height: 1.2; }
+.ticket-divider {
+    border-top: 2px dashed #eee;
+    margin: 25px 0;
+    position: relative;
+}
+.ticket-divider::before, .ticket-divider::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: var(--gray-1);
+    border-radius: 50%;
+    top: -10px;
+}
+.ticket-divider::before { left: -47px; }
+.ticket-divider::after  { right: -47px; }
+.btn-edit-ticket {
+    background: none;
+    border: none;
+    color: var(--brand-gold);
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: underline;
+    width: 100%;
+    margin-top: 15px;
+    cursor: pointer;
+}
+#review-preco-total {
+    color: var(--brand-gold) !important;
+    font-size: 1.6rem !important;
+    display: block;
+    margin-top: 5px;
+}
+
+
+/* --- Card das solicitações --- */
+.card-solicitacao {
+    border: none !important;
+    border-radius: var(--radius-custom);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    background: #fff;
+}
+.card-solicitacao:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+.pet-avatar-circle {
+    width: 48px;
+    height: 48px;
+    background: var(--brand-blue);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.info-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--gray-5);
+    margin-bottom: 2px;
+}
+
+.info-value {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--brand-blue);
+}
