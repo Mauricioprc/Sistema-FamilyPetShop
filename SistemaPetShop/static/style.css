@@ -1,0 +1,161 @@
+/* Cores da marca */
+:root {
+    --brand-blue: #0E294B;
+    --brand-orange: #F98F2B;
+    --brand-red: #D22B2B;
+    --brand-green: #2B7A09;
+}
+
+/* Background azul escuro para o menu de navegação e botões */
+.bg-primary-custom {
+    background-color: var(--brand-blue) !important;
+}
+
+.btn-primary-custom {
+    background-color: var(--brand-blue);
+    border-color: var(--brand-blue);
+    color: #fff;
+}
+
+.btn-primary-custom:hover {
+    background-color: #0c233f;
+    border-color: #0c233f;
+    color: #fff;
+}
+
+.btn-outline-primary-custom {
+    color: var(--brand-blue);
+    border-color: var(--brand-blue);
+}
+
+.btn-outline-primary-custom:hover {
+    background-color: var(--brand-blue);
+    border-color: var(--brand-blue);
+    color: #fff;
+}
+
+/* Cor laranja para textos e botões */
+.text-orange-custom {
+    color: var(--brand-orange) !important;
+}
+
+.btn-orange-custom {
+    background-color: var(--brand-orange);
+    border-color: var(--brand-orange);
+    color: #fff;
+}
+
+.btn-orange-custom:hover {
+    background-color: #e58226;
+    border-color: #e58226;
+    color: #fff;
+}
+
+
+.border-warning {
+    border-color: var(--brand-orange) !important;
+}
+
+.btn-outline-orange-custom {
+    color: var(--brand-orange);
+    border-color: var(--brand-orange);
+}
+
+.btn-outline-orange-custom:hover {
+    background-color: var(--brand-orange);
+    border-color: var(--brand-orange);
+    color: #fff;
+}
+
+/* Novo: Cores para botões de sucesso (verde) */
+.bg-green-custom {
+    background-color: var(--brand-green) !important;
+}
+
+.btn-green-custom {
+    background-color: var(--brand-green);
+    border-color: var(--brand-green);
+    color: #fff;
+}
+
+.btn-green-custom:hover {
+    background-color: #246608;
+    border-color: #246608;
+    color: #fff;
+}
+
+.btn-outline-green-custom {
+    color: var(--brand-green);
+    border-color: var(--brand-green);
+}
+
+.btn-outline-green-custom:hover {
+    background-color: var(--brand-green);
+    border-color: var(--brand-green);
+    color: #fff;
+}
+
+/* Novo: Cores para botões de perigo/alerta (vermelho) */
+.bg-red-custom {
+    background-color: var(--brand-red) !important;
+}
+
+.btn-red-custom {
+    background-color: var(--brand-red);
+    border-color: var(--brand-red);
+    color: #fff;
+}
+
+.btn-red-custom:hover {
+    background-color: #b92525;
+    border-color: #b92525;
+    color: #fff;
+}
+
+.btn-outline-red-custom {
+    color: var(--brand-red);
+    border-color: var(--brand-red);
+}
+
+.btn-outline-red-custom:hover {
+    background-color: var(--brand-red);
+    border-color: var(--brand-red);
+    color: #fff;
+}
+
+/* Nova classe para a linha do menu com degradê */
+.gradient-divider {
+    height: 5px;
+    background: linear-gradient(to right, var(--brand-blue), var(--brand-orange));
+    width: 100%;
+}
+
+/* NOVO: Estilo para os links de navegação */
+.navbar-nav .nav-link {
+    transition: transform 0.3s ease-in-out, color 0.3s ease-in-out; /* Adiciona a transição de cor */
+}
+
+
+.navbar-nav .nav-link:hover {
+    transform: scale(1.1); /* Aumenta o tamanho em 10% no hover */
+    color: var(--brand-orange) !important; /* Muda a cor do texto para laranja no hover */
+}
+
+/* Classes para as mensagens flash */
+.alert-orange-custom {
+    color: #fff;
+    background-color: var(--brand-orange);
+    border-color: var(--brand-orange);
+}
+
+.alert-success-custom {
+    color: #fff;
+    background-color: var(--brand-green);
+    border-color: var(--brand-green);
+}
+
+.alert-danger-custom {
+    color: #fff;
+    background-color: var(--brand-red);
+    border-color: var(--brand-red);
+}

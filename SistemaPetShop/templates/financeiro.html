@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Financeiro - Contas a Receber</h1>
+  </div>
+
+  {# --- BLOCO DE TOTAIS COM CARDS MENORES --- #}
+  <div class="row mb-4">
+    <div class="col-lg-4 col-md-6 mb-3">
+        <div class="card text-center h-100">
+            <div class="card-body py-3">
+                <h6 class="card-subtitle mb-2 text-muted">A Receber (Avulsos)</h6>
+                <h4 class="card-title mb-0">R$ {{ total_avulsos | float | currency }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4 col-md-6 mb-3">
+        <div class="card text-center h-100">
+            <div class="card-body py-3">
+                <h6 class="card-subtitle mb-2 text-muted">A Receber (Pacotes)</h6>
+                <h4 class="card-title mb-0">R$ {{ total_pacotes | float | currency }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4 col-md-12 mb-3">
+        <div class="card text-white bg-success text-center h-100">
+            <div class="card-body py-3">
+                <h6 class="card-subtitle mb-2 text-white-50">Total Geral a Receber</h6>
+                <h4 class="card-title mb-0">R$ {{ total_geral | float | currency }}</h4>
+            </div>
+        </div>
+    </div>
+  </div>
+
+  <div class="mb-3 btn-group" role="group">
+    <a href="{{ url_for('financeiro', vista='todos', q=query) }}" class="btn {% if vista_ativa == 'todos' %}btn-dark{% else %}btn-outline-dark{% endif %}">TODOS</a>
+    <a href="{{ url_for('financeiro', vista='atendimentos', q=query) }}" class="btn {% if vista_ativa == 'atendimentos' %}btn-dark{% else %}btn-outline-dark{% endif %}">AVULSOS</a>
+    <a href="{{ url_for('financeiro', vista='pacotes', q=query) }}" class="btn {% if vista_ativa == 'pacotes' %}btn-dark{% else %}btn-outline-dark{% endif %}">PACOTES</a>
+  </div>
+
+  <form method="GET" action="{{ url_for('financeiro') }}" class="mb-4">
+    <input type="hidden" name="vista" value="{{ vista_ativa }}">
+    <div class="input-group">
+      <input type="text" name="q" class="form-control" placeholder="Pesquisar por nome do tutor ou do pet..." value="{{ query or '' }}">
+      <button class="btn btn-outline-orange-custom" type="submit">Pesquisar</button>
+    </div>
+  </form>
+  
+  <div class="row">
+    {# Atendimentos Avulsos #}
+    {% if atendimentos %}
+      {% for atendimento in atendimentos %}
+        <div class="col-lg-6 mb-4">
+          <div class="card h-100 shadow-sm"> {# <-- CLASSES DE COR REMOVIDAS DAQUI #}
+            <div class="card-header d-flex justify-content-between">
+              <strong><i class="bi bi-cash"></i> Atendimento Avulso</strong>
+              <span>{{ atendimento.data.strftime('%d/%m/%Y') }}</span>
+            </div>
+            <div class="card-body">
+              <h5 class="card-title">{{ atendimento.cliente.nome_pet }}</h5>
+              <p class="card-subtitle mb-2 text-muted">{{ atendimento.cliente.nome_tutor }}</p>
+              <p class="card-text">
+                <strong>Serviço:</strong> {{ atendimento.nome_servico }} <br>
+                <strong>Valor:</strong> R$ {{ atendimento.preco | float | currency }}
+              </p>
+            </div>
+            <div class="card-footer bg-light d-grid">
+              <a href="{{ url_for('registrar_pagamento', atendimento_id=atendimento.id) }}" class="btn btn-success">Registrar Pagamento</a>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    {# Pacotes Pendentes #}
+    {% if pacotes %}
+      {% for pacote in pacotes %}
+        <div class="col-lg-6 mb-4">
+          <div class="card h-100 shadow-sm"> {# <-- CLASSES DE COR REMOVIDAS DAQUI #}
+            <div class="card-header d-flex justify-content-between">
+              <strong><i class="bi bi-box-seam"></i> Pacote</strong>
+              {% if pacote.data_inicio %}
+                <span>Início: {{ pacote.data_inicio.strftime('%d/%m/%Y') }}</span>
+              {% endif %}
+            </div>
+            <div class="card-body">
+              <h5 class="card-title">{{ pacote.cliente.nome_pet }}</h5>
+              <p class="card-subtitle mb-2 text-muted">{{ pacote.cliente.nome_tutor }}</p>
+              <p class="card-text">
+                <strong>Plano:</strong> {{ pacote.creditos_totais }}x {{ pacote.nome_servico }} <br>
+                <strong>Valor:</strong> R$ {{ pacote.preco_pacote | float | currency }}
+              </p>
+            </div>
+            <div class="card-footer bg-light d-grid">
+              <a href="{{ url_for('registrar_pagamento_pacote', pacote_id=pacote.id) }}" class="btn btn-success">Registrar Pagamento</a>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    {% endif %}
+  </div>
+
+  {% if not atendimentos and not pacotes %}
+    <div class="alert alert-success text-center">
+      <h4 class="alert-heading"><i class="bi bi-check-circle-fill"></i> Tudo em dia!</h4>
+      <p class="mb-0">Não há nenhuma conta pendente para receber.</p>
+    </div>
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+      <h1>Agenda</h1>
+      <h4>{{ data_selecionada.strftime('%d de %B de %Y') }}</h4>
+    </div>
+    
+    <div class="d-flex align-items-center">
+        <a href="{{ url_for('agenda_do_dia', data=dia_anterior.isoformat()) }}" class="btn btn-outline-primary-custom me-2">&lt;</a>
+        <form method="GET" action="{{ url_for('agenda_do_dia') }}" class="d-inline-block">
+            <input type="date" name="data" class="form-control" value="{{ data_selecionada.isoformat() }}" onchange="this.form.submit()">
+        </form>
+        <a href="{{ url_for('agenda_do_dia', data=proximo_dia.isoformat()) }}" class="btn btn-outline-primary-custom ms-2">&gt;</a>
+    </div>
+
+    <a href="{{ url_for('novo_atendimento') }}" class="btn btn-primary-custom btn-lg">
+        <i class="bi bi-plus-circle-fill"></i> Novo Agendamento
+    </a>
+  </div>
+
+  <div class="row">
+    {% for atendimento in atendimentos %}
+      <div class="col-lg-4 col-md-6 mb-4">
+        <div class="card h-100 shadow-sm">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+              {% if atendimento.nome_servico == 'Banho' %}
+                <i class="bi bi-droplet-fill text-primary"></i> 
+              {% else %}
+                <i class="bi bi-scissors text-info"></i>
+              {% endif %}
+              {{ atendimento.nome_servico }}
+            </h5>
+            <button type="button" class="btn btn-sm btn-outline-primary-custom py-0 px-2" data-bs-toggle="modal" data-bs-target="#modalEditar-{{ atendimento.id }}">
+              <i class="bi bi-pencil"></i> Reagendar
+            </button>
+          </div>
+          <div class="card-body">
+              <h4 class="card-title">{{ atendimento.cliente.nome_pet }}</h4>
+              <p class="card-subtitle mb-2 text-muted">{{ atendimento.cliente.nome_tutor }}</p>
+              
+              <div class="mt-3">
+                {% if atendimento.pacote_id %}
+                    <span class="badge bg-primary-custom"><i class="bi bi-box-seam"></i> Pacote</span>
+                {% else %}
+                    <span class="badge bg-info text-dark"><i class="bi bi-cash"></i> Avulso</span>
+                {% endif %}
+              </div>
+              {% if atendimento.observacao %}
+                <div class="mt-2">
+                  <small class="text-muted fst-italic"><strong>Obs:</strong> {{ atendimento.observacao }}</small>
+                </div>
+              {% endif %}
+          </div>
+          <div class="card-footer text-center bg-light">
+            <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                <form action="{{ url_for('confirmar_presenca', atendimento_id=atendimento.id) }}" method="POST" class="d-inline w-100">
+                    <button type="submit" class="btn btn-primary-custom w-100"><i class="bi bi-check-lg"></i> Presente</button>
+                </form>
+                <form action="{{ url_for('marcar_falta', atendimento_id=atendimento.id) }}" method="POST" class="d-inline w-100">
+                    <button type="submit" class="btn btn-outline-danger w-100"><i class="bi bi-x-lg"></i> Faltou</button>
+                </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal fade" id="modalEditar-{{ atendimento.id }}" tabindex="-1">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Reagendar Atendimento</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('editar_data_atendimento', atendimento_id=atendimento.id) }}" method="POST">
+                <div class="modal-body">
+                  <p>Reagendando serviço para <strong>{{ atendimento.cliente.nome_pet }}</strong>.</p>
+                  <label for="nova_data-{{ atendimento.id }}" class="form-label">Selecione a nova data:</label>
+                  <input type="date" class="form-control" name="nova_data" id="nova_data-{{ atendimento.id }}" value="{{ atendimento.data.isoformat() }}" required>
+                  <input type="hidden" name="data_agenda_original" value="{{ data_selecionada.isoformat() }}">
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                  <button type="submit" class="btn btn-primary-custom">Salvar Nova Data</button>
+                </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    {% else %}
+      <div class="col-12">
+        <div class="alert alert-success text-center mt-4">
+          <h4 class="alert-heading"><i class="bi bi-check-circle-fill"></i> Tudo Certo!</h4>
+          <p class="mb-0">Nenhum atendimento agendado para o dia selecionado.</p>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  {% if session.pacote_para_renovar %}
+  <div class="modal fade" id="modalRenovarPacote" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header btn-orange-custom text-white">
+          <h5 class="modal-title"><i class="bi bi-arrow-repeat"></i> Pacote Concluído!</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div id="corpoModalRenovacao" class="modal-body">
+          <p>O pacote de <strong>{{ session.pacote_para_renovar.creditos_totais }}x {{ session.pacote_para_renovar.nome_servico }}</strong> foi finalizado.</p>
+          <p><strong>Deseja renovar este pacote e agendar os próximos atendimentos automaticamente?</strong></p>
+        </div>
+        <div id="footerModalRenovacao" class="modal-footer">
+          <button id="btn-calcular-renovacao" type="button" class="btn btn-orange-custom">Sim, Ver as Datas</button>
+          <a href="{{ url_for('limpar_sessao_renovacao') }}" class="btn btn-secondary">Não, Obrigado</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+  const modalRenovarElement = document.getElementById('modalRenovarPacote');
+  if (modalRenovarElement) {
+    const modalRenovar = new bootstrap.Modal(modalRenovarElement);
+    const corpoModal = document.getElementById('corpoModalRenovacao');
+    const footerModal = document.getElementById('footerModalRenovacao');
+
+    modalRenovar.show();
+
+    document.getElementById('btn-calcular-renovacao').addEventListener('click', async function() {
+      try {
+        this.disabled = true;
+        this.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Calculando...';
+
+        const response = await fetch("{{ url_for('calcular_datas_renovacao') }}", { method: 'POST' });
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || 'Erro ao buscar datas.');
+        }
+
+        corpoModal.innerHTML = '<p>O novo pacote será agendado para as seguintes datas:</p>';
+        const listaDatasDiv = document.createElement('div');
+        listaDatasDiv.className = 'list-group';
+        data.datas_formatadas.forEach(dataStr => {
+          const span = document.createElement('span');
+          span.className = 'list-group-item';
+          span.innerHTML = `<i class="bi bi-calendar-check"></i> ${dataStr}`;
+          listaDatasDiv.appendChild(span);
+        });
+        corpoModal.appendChild(listaDatasDiv);
+
+        footerModal.innerHTML = `
+          <form action="{{ url_for('renovar_pacote') }}" method="POST" class="d-inline">
+            <button type="submit" class="btn btn-primary-custom">Confirmar e Renovar</button>
+          </form>
+          <a href="{{ url_for('limpar_sessao_renovacao') }}" class="btn btn-secondary">Cancelar</a>
+        `;
+
+      } catch(error) {
+        corpoModal.innerHTML = `<p class="text-danger">Erro: ${error.message}</p>`;
+      }
+    });
+  }
+});
+</script>
+{% endblock %}

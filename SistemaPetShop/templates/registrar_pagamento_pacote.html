@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <h1>Registrar Pagamento de Pacote</h1>
+  <hr>
+  <h5>Cliente: <strong>{{ pacote.cliente.nome_tutor }} ({{ pacote.cliente.nome_pet }})</strong></h5>
+  <p>
+    Pacote: <strong>{{ pacote.creditos_totais }}x {{ pacote.nome_servico }}</strong> 
+    <br>
+    Valor a Pagar: <strong>R$ {{ pacote.preco_pacote | float | currency }}</strong>
+  </p>
+
+  <form method="POST" class="mt-4">
+    <div class="mb-3">
+      <label for="data_pagamento" class="form-label">Data do Pagamento:</label>
+      <input type="date" id="data_pagamento" name="data_pagamento" class="form-control" required>
+    </div>
+
+    <div class="mb-3">
+        <label for="metodo_pagamento" class="form-label">Método de Pagamento:</label>
+        <select name="metodo_pagamento" id="metodo_pagamento" class="form-select" required>
+            <option value="" disabled selected>-- Escolha uma opção --</option>
+            <option value="Cartão de Crédito">Cartão de Crédito</option>
+            <option value="Cartão de Débito">Cartão de Débito</option>
+            <option value="Dinheiro">Dinheiro</option>
+            <option value="PIX">PIX</option>
+        </select>
+    </div>
+
+    <button type="submit" class="btn btn-success" onclick="return confirm('Confirma o pagamento de R$ {{ '%.2f' % pacote.preco_pacote }}?');">Confirmar Pagamento</button>
+    <a href="{{ url_for('financeiro') }}" class="btn btn-secondary">Cancelar</a>
+  </form>
+{% endblock %}

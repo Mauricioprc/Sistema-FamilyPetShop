@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  {# --- CABEÇALHO CORRIGIDO --- #}
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+      <h1>Histórico de Atendimentos</h1>
+      <h4>{{ data_selecionada.strftime('%d de %B de %Y') }}</h4>
+    </div>
+    
+    <div class="d-flex align-items-center">
+        <a href="{{ url_for('listar_atendimentos', data=dia_anterior.isoformat()) }}" class="btn btn-outline-primary-custom me-2">&lt;</a>
+        
+        <form method="GET" action="{{ url_for('listar_atendimentos') }}" class="d-inline-block">
+            <input type="date" name="data" class="form-control" value="{{ data_selecionada.isoformat() }}" onchange="this.form.submit()">
+        </form>
+
+        <a href="{{ url_for('listar_atendimentos', data=proximo_dia.isoformat()) }}" class="btn btn-outline-primary-custom ms-2">&gt;</a>
+    </div>
+    
+    {# --- BOTÃO RESTAURADO --- #}
+    <a href="{{ url_for('novo_atendimento') }}" class="btn btn-primary-custom btn-lg">
+        <i class="bi bi-plus-circle-fill"></i> Registrar Banho Avulso / Tosa
+    </a>
+  </div>
+
+  <div class="row">
+    {% for atendimento in atendimentos %}
+      <div class="col-lg-4 col-md-6 mb-4">
+        <div class="card h-100 shadow-sm border-2 {% if atendimento.status_presenca == 'Presente' %}border-success{% else %}border-orange-custom{% endif %}">
+          <div class="card-header {% if atendimento.status_presenca == 'Presente' %}bg-success-subtle{% else %}bg-orange-custom-subtle{% endif %}">
+            {% if atendimento.status_presenca == 'Presente' %}
+                <strong class="text-success-emphasis"><i class="bi bi-check-circle-fill"></i> PRESENTE</strong>
+            {% else %}
+                <strong class="text-orange-custom-emphasis"><i class="bi bi-x-circle-fill"></i> FALTOU</strong>
+            {% endif %}
+          </div>
+          <div class="card-body">
+              <h5 class="card-title">{{ atendimento.cliente.nome_pet }}</h5>
+              <p class="card-subtitle mb-2 text-muted">{{ atendimento.cliente.nome_tutor }}</p>
+              <p class="card-text">
+                  <strong>Serviço:</strong> {{ atendimento.nome_servico }}
+                  <br>
+                  <strong>Origem:</strong>
+                  {% if atendimento.pacote_id %}
+                      <span class="badge bg-primary-custom">Pacote</span>
+                  {% else %}
+                      <span class="badge bg-info text-dark">Avulso</span>
+                  {% endif %}
+              </p>
+          </div>
+        </div>
+      </div>
+    {% else %}
+      <div class="col-12">
+        <div class="alert alert-light text-center mt-4">
+          <p class="mb-0">Nenhum histórico de atendimento concluído no dia selecionado.</p>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% endblock %}
