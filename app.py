@@ -2,27 +2,26 @@ import os
 import time
 import logging
 from logging.handlers import RotatingFileHandler
-from flask import Flask, redirect, url_for, render_template
+from flask import Flask, app, redirect, url_for, render_template
 from flask_login import login_required
 from config import Config, config
 from extensions import db, migrate, login_manager, csrf, limiter
 from utils import configurar_locale, format_currency
+from flask import current_app
 
 
-# ✅ NOVO: Função para cache busting de arquivos estáticos
 def get_file_hash(filename):
     """
     Retorna timestamp do arquivo para forçar refresh no navegador
-    Exemplo: main.css?v=1234567890 em vez de main.css
     """
     try:
-        filepath = os.path.join('static', filename)
+        # Usa o diretório estático oficial da aplicação Flask
+        filepath = os.path.join(current_app.static_folder, filename)
         if os.path.exists(filepath):
             return int(os.path.getmtime(filepath))
     except Exception as e:
         logging.warning(f'Erro ao obter hash do arquivo {filename}: {e}')
     return int(time.time())
-
 
 def setup_logging(app):
     """Configurar logging estruturado"""
@@ -92,14 +91,11 @@ def create_app(config_name='development'):
     # ✅ NOVO: Context processor para cache busting
     @app.context_processor
     def inject_cache_bust():
-        """
-        Injeta função de cache busting em todos os templates
-        Uso: {{ cache_bust('css/main.css') }}
-        Resultado: css/main.css?v=1234567890
-        """
         def cache_bust(filename):
             hash_value = get_file_hash(filename)
-            return f"{filename}?v={hash_value}"
+            # Usa o url_for para garantir o caminho '/static/...'
+            url_arquivo = url_for('static', filename=filename)
+            return f"{url_arquivo}?v={hash_value}"
         return dict(cache_bust=cache_bust)
 
     _registrar_blueprints(app)
