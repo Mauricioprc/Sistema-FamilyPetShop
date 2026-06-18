@@ -159,11 +159,12 @@
                                 </a>
                                 
                                 {% if a.data < hoje %}
-                                    {% set msg_cobrar_a = "Olá " ~ a.cliente.nome_tutor ~ "! Gostaríamos de lembrar do acerto do atendimento do(a) " ~ a.cliente.nome_pet ~ " realizado no dia " ~ a.data.strftime('%d/%m') ~ " (R$ " ~ "%.2f"|format(a.preco) ~ "). Qualquer dúvida, estamos à disposição!" %}
-                                    <a href="https://wa.me/55{{ a.cliente.telefone | replace(' ', '') | replace('-', '') | replace('(', '') | replace(')', '') }}?text={{ msg_cobrar_a | replace(' ', '%20') }}" 
-                                       target="_blank" class="btn btn-light border text-danger btn-sm px-3 rounded-pill shadow-sm transition-all hover-solid" title="Cobrar via WhatsApp">
+                                    <button type="button"
+                                            class="btn btn-light border text-danger btn-sm px-3 rounded-pill shadow-sm transition-all hover-solid btn-wpp-api"
+                                            data-url="{{ url_for('whatsapp.cobranca_atendimento', atendimento_id=a.id) }}"
+                                            title="Cobrar via WhatsApp">
                                         <i class="bi bi-whatsapp"></i>
-                                    </a>
+                                    </button>
                                 {% endif %}
                             {% else %}
                                 <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill w-100 py-2 fw-medium">
@@ -222,11 +223,12 @@
                                 </a>
                                 
                                 {% if p.data_vencimento and p.data_vencimento < hoje %}
-                                    {% set msg_cobrar_p = "Olá " ~ p.cliente.nome_tutor ~ "! Gostaríamos de lembrar do acerto do pacote do " ~ p.cliente.nome_pet ~ " (R$ " ~ "%.2f"|format(p.preco_pacote) ~ "). Qualquer dúvida, estamos à disposição!" %}
-                                    <a href="https://wa.me/55{{ p.cliente.telefone | replace(' ', '') | replace('-', '') | replace('(', '') | replace(')', '') }}?text={{ msg_cobrar_p | replace(' ', '%20') }}" 
-                                       target="_blank" class="btn btn-light border text-danger btn-sm px-3 rounded-pill shadow-sm transition-all hover-solid" title="Cobrar via WhatsApp">
+                                    <button type="button"
+                                            class="btn btn-light border text-danger btn-sm px-3 rounded-pill shadow-sm transition-all hover-solid btn-wpp-api"
+                                            data-url="{{ url_for('whatsapp.cobranca_pacote', pacote_id=p.id) }}"
+                                            title="Cobrar via WhatsApp">
                                         <i class="bi bi-whatsapp"></i>
-                                    </a>
+                                    </button>
                                 {% endif %}
                             {% else %}
                                 <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill w-100 py-2 fw-medium">
@@ -268,4 +270,20 @@
     outline: none !important;
 }
 </style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function abrirWpp(url) {
+    try {
+        const res  = await fetch(url);
+        const data = await res.json();
+        if (data.url) { window.open(data.url, '_blank'); }
+        else { alert('Erro ao gerar link: ' + (data.erro || 'desconhecido')); }
+    } catch (e) { alert('Erro de comunicação com o servidor.'); }
+}
+document.querySelectorAll('.btn-wpp-api').forEach(btn => {
+    btn.addEventListener('click', function() { abrirWpp(this.dataset.url); });
+});
+</script>
 {% endblock %}

@@ -64,8 +64,10 @@
                                         <h4 class="text-danger fw-semibold mb-0">R$ {{ "%.2f"|format(total_divida)|replace('.', ',') }}</h4>
                                     </div>
                                     
-                                    {% set telefone_limpo = cliente.telefone | replace(' ', '') | replace('-', '') | replace('(', '') | replace(')', '') %}
-                                    <button onclick="enviarCobrancaWpp('{{ telefone_limpo }}')" class="btn btn-sm btn-success fw-bold px-3 rounded-pill shadow-sm">
+                                    <button type="button"
+                                            class="btn btn-sm btn-success fw-bold px-3 rounded-pill shadow-sm btn-wpp-api"
+                                            data-url="{{ url_for('whatsapp.cobranca_cliente', cliente_id=cliente.id) }}"
+                                            title="Cobrar via WhatsApp">
                                         <i class="bi bi-whatsapp"></i> Cobrar
                                     </button>
                                 </div>
@@ -99,26 +101,7 @@
                                     </ul>
                                 </div>
 
-                                <textarea id="textoCobranca" style="display: none;">
-                        Olá {{ cliente.nome_tutor }}! Tudo bem? 🐾
-                        Passando para fazer uma atualização da ficha do(a) {{ cliente.nome_pet }}. 
-                        Constam os seguintes valores em aberto há alguns dias:
-
-                        {% for pacote in cliente.pacotes_em_atraso -%}
-                        📦 *Pacote: {{ pacote.nome_servico }}* (Vencimento: {{ pacote.data_vencimento.strftime('%d/%m/%Y') }})
-                        {% for at in pacote.atendimentos.order_by('data').all() -%}
-                        • {{ at.data.strftime('%d/%m') }} - {% if at.status_presenca == 'Presente' %}✅ Já realizou{% elif at.status_presenca == 'Faltou' %}❌ Faltou{% else %}⏳ Agendado{% endif %}
-                        {% endfor %}
-                        {% endfor %}
-
-                        {% for avulso in cliente.atendimentos_avulsos_em_atraso -%}
-                        ✂️ *Avulso: {{ avulso.nome_servico }}* realizado em {{ avulso.data.strftime('%d/%m/%Y') }}
-                        {% endfor %}
-
-                        *Total pendente: R$ {{ "%.2f"|format(total_divida)|replace('.', ',') }}*
-
-                        Consegue confirmar se o pagamento já foi feito ou prefere que eu envie a chave PIX? Qualquer dúvida, estou à disposição!
-                                </textarea>
+                                
 
                             </div>
                         </div>
@@ -569,15 +552,16 @@ function limparFiltro() {
     filtrarHistorico();
 }
 
-function enviarCobrancaWpp(telefone) {
-    // Lê o texto que o nosso Jinja montou no textarea
-    const textarea = document.getElementById('textoCobranca');
-    if (!textarea) return;
-    
-    const mensagem = textarea.value.trim();
-    
-    // Abre a janela do WhatsApp já com o texto formatado e codificado
-    window.open(`https://wa.me/55${telefone}?text=${encodeURIComponent(mensagem)}`, '_blank');
+async function abrirWpp(url) {
+    try {
+        const res  = await fetch(url);
+        const data = await res.json();
+        if (data.url) { window.open(data.url, '_blank'); }
+        else { alert('Erro ao gerar link: ' + (data.erro || 'desconhecido')); }
+    } catch (e) { alert('Erro de comunicação com o servidor.'); }
 }
+document.querySelectorAll('.btn-wpp-api').forEach(btn => {
+    btn.addEventListener('click', function() { abrirWpp(this.dataset.url); });
+});
 </script>
 {% endblock %}

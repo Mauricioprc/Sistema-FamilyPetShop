@@ -34,20 +34,12 @@
                     {% endif %}
                   
                   <div class="d-flex gap-1">
-                    {% set telefone_limpo = atendimento.cliente.telefone | replace(' ', '') | replace('-', '') | replace('(', '') | replace(')', '') %}
-                    
-                    {# Lógica para data dinâmica #}
-                    {% if atendimento.data == hoje %}
-                        {% set dia_texto = "hoje" %}
-                    {% else %}
-                        {% set dia_texto = "o dia " ~ atendimento.data.strftime('%d/%m') %}
-                    {% endif %}
-                    
-                    {% set msg_wa = "Olá " ~ atendimento.cliente.nome_tutor ~ "! Passando para confirmar o nosso agendamento de " ~ atendimento.nome_servico ~ " do(a) " ~ atendimento.cliente.nome_pet ~ " para " ~ dia_texto ~ "." %}
-                    
-                    <a href="https://wa.me/55{{ telefone_limpo }}?text={{ msg_wa | urlencode }}" target="_blank" class="btn btn-sm btn-success py-0 px-2" title="Enviar Lembrete">
+                    <button type="button"
+                            class="btn btn-sm btn-success py-0 px-2 btn-wpp-api"
+                            data-url="{{ url_for('whatsapp.lembrete', atendimento_id=atendimento.id) }}"
+                            title="Enviar Lembrete">
                         <i class="bi bi-whatsapp"></i>
-                    </a>
+                    </button>
                     
                     <button class="btn btn-sm btn-outline-primary-custom py-0 px-2" data-bs-toggle="modal" data-bs-target="#modalEditar-{{ atendimento.id }}">
                       <i class="bi bi-pencil"></i>
@@ -108,9 +100,11 @@
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                 
-                {% set telefone_limpo = atendimento.cliente.telefone | replace(' ', '') | replace('-', '') | replace('(', '') | replace(')', '') %}
-                <button type="button" class="btn btn-success" onclick="enviarWppReagendamento('{{ telefone_limpo }}', '{{ atendimento.cliente.nome_tutor }}', '{{ atendimento.cliente.nome_pet }}', '{{ atendimento.nome_servico }}', 'nova_data_{{ atendimento.id }}')">
-                   <i class="bi bi-whatsapp"></i> Avisar Cliente
+                <button type="button"
+                        class="btn btn-success btn-wpp-reagendamento"
+                        data-url="{{ url_for('whatsapp.reagendamento', atendimento_id=atendimento.id) }}"
+                        data-input-id="nova_data_{{ atendimento.id }}">
+                    <i class="bi bi-whatsapp"></i> Avisar Cliente
                 </button>
                 
                 <button type="submit" class="btn btn-primary-custom">Salvar</button>
@@ -208,56 +202,46 @@
 
 {% block scripts %}
 <script>
-$(document).ready(function() {
-  const modalRenovarEl = document.getElementById('modalRenovarPacote');
-  if (modalRenovarEl) {
-    const modalRenovar = new bootstrap.Modal(modalRenovarEl);
-    const corpo = document.getElementById('corpoModalRenovacao');
-    const footer = document.getElementById('footerModalRenovacao');
-    modalRenovar.show();
-
-    document.getElementById('btn-calcular-renovacao').addEventListener('click', async function() {
-      this.disabled = true;
-      this.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Calculando...';
-      try {
-        const res = await fetch("{{ url_for('pacotes.calcular_renovacao') }}", { method: 'POST' });
+// -----------------------------------------------------------------------
+// Botões de WhatsApp — chamam a API centralizada em /api/whatsapp/
+// -----------------------------------------------------------------------
+async function abrirWpp(url) {
+    try {
+        const res  = await fetch(url);
         const data = await res.json();
-        if (!res.ok || !data.success) throw new Error(data.message || 'Erro.');
-        corpo.innerHTML = '<p>O novo pacote será agendado para:</p>';
-        const lista = document.createElement('div');
-        lista.className = 'list-group';
-        data.datas_formatadas.forEach(d => {
-          const s = document.createElement('span');
-          s.className = 'list-group-item';
-          s.innerHTML = `<i class="bi bi-calendar-check"></i> ${d}`;
-          lista.appendChild(s);
-        });
-        corpo.appendChild(lista);
-        footer.innerHTML = `
-          <form action="{{ url_for('pacotes.renovar') }}" method="POST" class="d-inline">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="btn btn-primary-custom">Confirmar e Renovar</button>
-          </form>
-          <a href="{{ url_for('pacotes.limpar_renovacao') }}" class="btn btn-secondary">Cancelar</a>`;
-      } catch(e) {
-        corpo.innerHTML = `<p class="text-danger">Erro: ${e.message}</p>`;
-      }
-    });
-  }
-});
-// Função para ler a data escolhida e abrir o WhatsApp do Reagendamento
-function enviarWppReagendamento(telefone, tutor, pet, servico, inputId) {
-    const novaDataInput = document.getElementById(inputId).value;
-    if(!novaDataInput) return;
-    
-    // Converte a data de AAAA-MM-DD para DD/MM/AAAA
-    const partes = novaDataInput.split('-');
-    const dataFormatada = partes[2] + '/' + partes[1] + '/' + partes[0];
-    
-    const msg = `Olá ${tutor}! Passando para informar que o ${servico} do(a) ${pet} foi reagendado para o dia ${dataFormatada}.`;
-    window.open(`https://wa.me/55${telefone}?text=${encodeURIComponent(msg)}`, '_blank');
+        if (data.url) {
+            window.open(data.url, '_blank');
+        } else {
+            alert('Erro ao gerar link: ' + (data.erro || 'desconhecido'));
+        }
+    } catch (e) {
+        alert('Erro de comunicação com o servidor.');
+    }
 }
 
+// Lembrete de confirmação
+document.querySelectorAll('.btn-wpp-api').forEach(btn => {
+    btn.addEventListener('click', function() {
+        abrirWpp(this.dataset.url);
+    });
+});
+
+// Aviso de reagendamento (lê a data do input antes de chamar)
+document.querySelectorAll('.btn-wpp-reagendamento').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const inputId  = this.dataset.inputId;
+        const novaData = document.getElementById(inputId)?.value;
+        if (!novaData) {
+            alert('Selecione a nova data antes de avisar o cliente.');
+            return;
+        }
+        abrirWpp(this.dataset.url + '?nova_data=' + novaData);
+    });
+});
+
+// -----------------------------------------------------------------------
+// Modal de renovação de pacote
+// -----------------------------------------------------------------------
 $(document).ready(function() {
   const modalRenovarEl = document.getElementById('modalRenovarPacote');
   if (modalRenovarEl) {
@@ -273,11 +257,11 @@ $(document).ready(function() {
         const res = await fetch("{{ url_for('pacotes.calcular_renovacao') }}", { method: 'POST' });
         const data = await res.json();
         if (!res.ok || !data.success) throw new Error(data.message || 'Erro.');
-        
+
         corpo.innerHTML = '<p>O novo pacote será agendado para:</p>';
         const lista = document.createElement('div');
         lista.className = 'list-group mb-3';
-        
+
         let datasWpp = [];
         data.datas_formatadas.forEach(d => {
           const s = document.createElement('span');
@@ -287,24 +271,19 @@ $(document).ready(function() {
           datasWpp.push(d);
         });
         corpo.appendChild(lista);
-        
-        // --- PREPARAÇÃO DO BOTÃO WHATSAPP DA RENOVAÇÃO ---
-        // Protegemos a leitura com o Jinja: se não houver pacote, preenche vazio para não quebrar a página
+
         {% if session.pacote_para_renovar %}
             const telLimpo = "{{ session.pacote_para_renovar.telefone_cliente | default('') | replace(' ', '') | replace('-', '') | replace('(', '') | replace(')', '') }}";
-            const tutor = "{{ session.pacote_para_renovar.nome_tutor | default('') }}";
-            const pet = "{{ session.pacote_para_renovar.nome_pet | default('') }}";
-            const servico = "{{ session.pacote_para_renovar.nome_servico | default('serviço') }}";
+            const tutor    = "{{ session.pacote_para_renovar.nome_tutor   | default('') }}";
+            const pet      = "{{ session.pacote_para_renovar.nome_pet     | default('') }}";
+            const servico  = "{{ session.pacote_para_renovar.nome_servico | default('serviço') }}";
         {% else %}
-            const telLimpo = "";
-            const tutor = "";
-            const pet = "";
-            const servico = "";
+            const telLimpo = ""; const tutor = ""; const pet = ""; const servico = "";
         {% endif %}
-        
+
         const listaDatasTexto = datasWpp.join('\n- ');
         const msgPacote = `Olá ${tutor}! O pacote de ${servico} do(a) ${pet} foi renovado com sucesso! 🎉\n\nAs próximas datas agendadas são:\n- ${listaDatasTexto}\n\nQualquer dúvida, estamos à disposição!`;
-        const linkWpp = `https://wa.me/55${telLimpo}?text=${encodeURIComponent(msgPacote)}`;
+        const linkWpp   = `https://wa.me/55${telLimpo}?text=${encodeURIComponent(msgPacote)}`;
 
         footer.innerHTML = `
           <a href="${linkWpp}" target="_blank" class="btn btn-success"><i class="bi bi-whatsapp"></i> Enviar Datas</a>

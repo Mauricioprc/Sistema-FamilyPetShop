@@ -60,12 +60,14 @@
                     <p class="text-muted mb-0 small">{{ a.cliente.nome_tutor }}</p>
                 </div>
                 
-                {% if a.status_presenca == 'Faltou' %}
-                    {% set msg_falta = "Olá " ~ a.cliente.nome_tutor ~ ", tudo bem? Sentimos a falta do(a) " ~ a.cliente.nome_pet ~ " hoje no banho! 😢 Aconteceu algum imprevisto? Vamos reagendar para ele(a) não perder o ritmo de limpeza?" %}
-                    <a href="https://wa.me/55{{ a.cliente.telefone | replace(' ', '') | replace('-', '') | replace('(', '') | replace(')', '') }}?text={{ msg_falta | replace(' ', '%20') }}" 
-                       target="_blank" class="btn btn-danger btn-sm rounded-circle shadow-sm" title="Avisar no WhatsApp" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;">
-                       <i class="bi bi-whatsapp"></i>
-                    </a>
+                \{% if a.status_presenca == 'Faltou' %}
+                    <button type="button"
+                            class="btn btn-danger btn-sm rounded-circle shadow-sm btn-wpp-api"
+                            data-url="{{ url_for('whatsapp.falta', atendimento_id=a.id) }}"
+                            title="Avisar no WhatsApp"
+                            style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-whatsapp"></i>
+                    </button>
                 {% endif %}
             </div>
 
@@ -91,4 +93,20 @@
         </div>
     {% endfor %}
   </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function abrirWpp(url) {
+    try {
+        const res  = await fetch(url);
+        const data = await res.json();
+        if (data.url) { window.open(data.url, '_blank'); }
+        else { alert('Erro ao gerar link: ' + (data.erro || 'desconhecido')); }
+    } catch (e) { alert('Erro de comunicação com o servidor.'); }
+}
+document.querySelectorAll('.btn-wpp-api').forEach(btn => {
+    btn.addEventListener('click', function() { abrirWpp(this.dataset.url); });
+});
+</script>
 {% endblock %}
