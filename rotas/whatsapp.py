@@ -12,9 +12,10 @@ Endpoints:
   GET  /api/whatsapp/reagendamento/<atendimento_id> → Aviso de reagendamento (agenda)
   GET  /api/whatsapp/cobranca_cliente/<cliente_id>  → Cobrança detalhada (detalhe do cliente)
 """
+# -*- coding: utf-8 -*-
 
 from datetime import date, timedelta
-from urllib.parse import quote_plus
+from urllib.parse import quote
 
 from flask import Blueprint, jsonify, request
 from flask_login import login_required
@@ -38,9 +39,9 @@ def _limpar_telefone(telefone: str) -> str:
 
 
 def _montar_url(telefone: str, mensagem: str) -> str:
-    return 'https://wa.me/{}?text={}'.format(
+    return 'https://api.whatsapp.com/send?phone={}&text={}'.format(
         _limpar_telefone(telefone),
-        quote_plus(mensagem)
+        quote(mensagem)
     )
 
 
