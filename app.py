@@ -124,9 +124,10 @@ def _registrar_blueprints(app):
         from rotas.financeiro import financeiro_bp
         from rotas.publico import publico_bp
         from rotas.whatsapp import whatsapp_bp
+        from rotas.backup import backup_bp
 
         for bp in [auth_bp, dashboard_bp, clientes_bp, agenda_bp,
-                   pacotes_bp, financeiro_bp, publico_bp, whatsapp_bp]:
+                   pacotes_bp, financeiro_bp, publico_bp, whatsapp_bp, backup_bp]:
             app.register_blueprint(bp)
             app.logger.info(f'Blueprint registrado: {bp.name}')
     except ImportError as e:

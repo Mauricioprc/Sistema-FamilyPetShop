@@ -106,7 +106,12 @@
   
   <!-- ✅ JS LOCAL COM CACHE BUSTING -->
   <script src="{{ cache_bust('js/main.js') }}"></script>
-  
+
+  {% if current_user.is_authenticated %}
+  <!-- Aviso de backup periódico (a cada 7 dias) -->
+  <script src="{{ cache_bust('js/backup-reminder.js') }}"></script>
+  {% endif %}
+
   {% block scripts %}{% endblock %}
 
   <!-- PWA: registra o service worker -->
