@@ -48,13 +48,24 @@
     border: 1px solid var(--gray-3);
 }
 .minimal-radio-group .form-check-input:checked {
-    background-color: var(--brand-orange);
-    border-color: var(--brand-orange);
+    background-color: var( --brand-gold-dark);
+    border-color: var( --brand-gold-dark);
 }
 .minimal-radio-group .form-check-label {
     font-weight: 400;
     color: var(--gray-5);
 }
+
+/* Para navegadores baseados em Chromium (Chrome, Edge, Opera) e Safari */
+.form-range::-webkit-slider-thumb {
+  background-color: #B8952E !important; /* Substitua pela cor desejada */
+}
+
+/* Para o Firefox */
+.form-range::-moz-range-thumb {
+  background-color: #B8952E !important; /* Substitua pela cor desejada */
+}
+
 
 /* --- Wizard: Indicador de passos --- */
 .step-indicator {

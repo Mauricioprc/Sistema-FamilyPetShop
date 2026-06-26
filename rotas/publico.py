@@ -1,11 +1,11 @@
 from datetime import datetime
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required
-from urllib.parse import quote_plus
 from extensions import db, limiter
 from models import Atendimento, Cliente, Avaliacao, StatusAtendimento, StatusPagamento
 from utils import parse_preco, salvar_imagem, formatar_telefone_whatsapp
 from config import Config
+from rotas.whatsapp import _montar_url  # ✅ usa a mesma codificação (quote) da API centralizada
 
 publico_bp = Blueprint('publico', __name__)
 
@@ -189,9 +189,9 @@ def confirmar_solicitacao(atendimento_id):
     preco_fmt = 'R$ {:.2f}'.format(atendimento.preco)
 
     mensagem = (
-        '\u2728 *Agendamento Confirmado!* \u2728\n'
+        '\u2728 *Agendamento Confirmado!* \u2728\n\n'
         'Ola, {}! \U0001f43e\n\n'
-        'Seu agendamento no \U0001f43e *Family Pet Shop* foi confirmado!\n'
+        'Seu agendamento no *Family Pet Shop* foi confirmado!\n'
         '\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\n\n'
         '\U0001f436 *Pet:* {}\n'
         '\U0001f4c5 *Data:* {}\n'
@@ -203,7 +203,7 @@ def confirmar_solicitacao(atendimento_id):
     ).format(tutor, pet, data_fmt, servico, preco_fmt)
 
     telefone = formatar_telefone_whatsapp(atendimento.cliente.telefone)
-    whatsapp_url = 'https://wa.me/{}?text={}'.format(telefone, quote_plus(mensagem))
+    whatsapp_url = _montar_url(telefone, mensagem)
     return jsonify({'success': True, 'whatsapp_url': whatsapp_url})
 
 
@@ -220,7 +220,7 @@ def recusar_solicitacao(atendimento_id):
     ).format(tutor, data_fmt)
 
     telefone = formatar_telefone_whatsapp(atendimento.cliente.telefone)
-    whatsapp_url = 'https://wa.me/{}?text={}'.format(telefone, quote_plus(mensagem))
+    whatsapp_url = _montar_url(telefone, mensagem)
 
     db.session.delete(atendimento)
     db.session.commit()

@@ -117,6 +117,9 @@
 .btn-check:checked + .service-card-main .service-icon-box {
     background-color: var(--brand-gold) !important;
 }
+.btn-check:checked + .service-card-main .service-img-main {
+    transform: translateX(-50%) scale(1.25);
+}
 .btn-check:focus + .service-card-main {
     outline: none !important;
     box-shadow: none !important;

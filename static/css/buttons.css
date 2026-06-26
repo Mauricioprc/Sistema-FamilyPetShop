@@ -44,6 +44,19 @@
     color: #fff;
 }
 
+/* --- Dourado --- */
+.btn-gold-custom {
+    background-color: var(--brand-gold);
+    border-color: var(--brand-gold);
+    color: #1A1A1A;
+    transition: background-color var(--transition-fast);
+}
+.btn-gold-custom:hover {
+    background-color: var(--brand-gold-dark);
+    border-color: var(--brand-gold-dark);
+    color: #1A1A1A;
+}
+
 /* --- Verde --- */
 .btn-green-custom {
     background-color: var(--brand-green);
