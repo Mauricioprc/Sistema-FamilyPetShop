@@ -48,6 +48,11 @@ class Config:
 
     # Rate limiting
     RATELIMIT_STORAGE_URL = os.environ.get('RATELIMIT_STORAGE_URL', 'memory://')
+
+    # WhatsApp Cloud API (chatbot)
+    WHATSAPP_TOKEN = os.environ.get('WHATSAPP_TOKEN')
+    WHATSAPP_PHONE_NUMBER_ID = os.environ.get('WHATSAPP_PHONE_NUMBER_ID')
+    WHATSAPP_VERIFY_TOKEN = os.environ.get('WHATSAPP_VERIFY_TOKEN')
     RATELIMIT_DEFAULT = "200 per day;50 per hour"
     RATELIMIT_HEADERS_ENABLED = True
 
