@@ -40,9 +40,9 @@
                         <span class="text-secondary small fw-medium">Origem do Valor:</span>
                         <div>
                             {% if is_pacote %}
-                                <span class="badge bg-light text-primary-custom border rounded-pill px-3 py-1 fw-medium me-2"><i class="bi bi-box-seam me-1"></i> Pacote ({{ obj.creditos_totais }}x)</span>
+                                <span class="badge bg-light text-black border rounded-pill px-3 py-1 fw-medium me-2"><i class="bi bi-box-seam me-1"></i> Pacote ({{ obj.creditos_totais }}x)</span>
                             {% else %}
-                                <span class="badge bg-light text-secondary border rounded-pill px-3 py-1 fw-medium me-2"><i class="bi bi-tag me-1"></i> Avulso</span>
+                                <span class="badge bg-light text-black border rounded-pill px-3 py-1 fw-medium me-2"><i class="bi bi-tag me-1"></i> Avulso</span>
                             {% endif %}
                             <span class="fw-medium text-dark small">{{ obj.nome_servico }}</span>
                         </div>
@@ -57,6 +57,7 @@
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         
                         <input type="hidden" id="valor_bruto_hidden" value="{{ valor_bruto }}">
+                        {% if origem %}<input type="hidden" name="origem" value="{{ origem }}">{% endif %}
                         
                         <div class="row g-4 mb-4">
                             <div class="col-md-6">

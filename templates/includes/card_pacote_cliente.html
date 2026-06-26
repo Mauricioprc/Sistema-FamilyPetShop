@@ -1,4 +1,4 @@
-<div class="card mb-3 shadow-sm rounded-4">
+<div class="card mb-3 shadow-sm rounded-4 card-pacote-clicavel" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#modalDatasPacote-{{ pacote.id }}">
   <div class="card-body">
     <div class="d-flex justify-content-between align-items-center">
       <h5 class="card-title mb-0" style="color: #0c233f;">{{ pacote.creditos_totais }}x {{ pacote.nome_servico }}</h5>
@@ -39,11 +39,18 @@
                 <span class="badge" style="background-color: #fd7e14; color: white;">Pendente (Aguardando Data)</span>
             {% endif %}
         {% else %}
-             <span class="badge bg-secondary"><i class="bi bi-check-circle"></i> Pago</span>
+             <span class="badge bg-secondary">
+                <i class="bi bi-check-circle"></i> Pago{% if pacote.data_pagamento %} em {{ pacote.data_pagamento.strftime('%d/%m/%Y') }}{% endif %}
+             </span>
         {% endif %}
       </div>
 
-      <div class="d-flex gap-2 align-items-center">
+      <div class="d-flex gap-2 align-items-center" onclick="event.stopPropagation();">
+          {% if pacote.status_pagamento == 'Pendente' %}
+          <a href="{{ url_for('financeiro.registrar_pagamento_pacote', pacote_id=pacote.id, origem=request.path) }}" class="btn btn-sm btn-success rounded-pill px-3" title="Dar baixa (registrar pagamento)">
+              <i class="bi bi-cash-coin"></i> Dar baixa
+          </a>
+          {% endif %}
           <form action="{{ url_for('pacotes.excluir', pacote_id=pacote.id) }}" method="POST" class="m-0" onsubmit="return confirm('Tem certeza que deseja excluir este pacote?')">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <button type="submit" class="btn btn-sm btn-light border rounded-circle text-danger">
@@ -52,6 +59,42 @@
           </form>
       </div>
 
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="modalDatasPacote-{{ pacote.id }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 rounded-4 shadow">
+      <div class="modal-header border-0">
+        <h5 class="modal-title fw-bold" style="color: #0c233f;">
+          <i class="bi bi-calendar3 me-2"></i>{{ pacote.creditos_totais }}x {{ pacote.nome_servico }}
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        {% set lista_atendimentos = pacote.atendimentos.order_by('data').all() %}
+        {% if lista_atendimentos %}
+        <ul class="list-group list-group-flush">
+          {% for atendimento in lista_atendimentos %}
+          <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+            <span>
+              <i class="bi bi-calendar-event me-2 text-muted"></i>{{ atendimento.data.strftime('%d/%m/%Y') }}
+            </span>
+            {% if atendimento.status_presenca == 'Presente' %}
+              <span class="badge bg-success rounded-pill">Presente</span>
+            {% elif atendimento.status_presenca == 'Faltou' %}
+              <span class="badge bg-danger rounded-pill">Faltou</span>
+            {% else %}
+              <span class="badge bg-primary-custom rounded-pill">{{ atendimento.status_presenca }}</span>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-muted text-center mb-0">Nenhuma data agendada ainda para este pacote.</p>
+        {% endif %}
+      </div>
     </div>
   </div>
 </div>

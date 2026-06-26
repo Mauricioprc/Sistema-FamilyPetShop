@@ -125,9 +125,14 @@ def registrar_pagamento_pacote(pacote_id):
         
         db.session.commit()
         flash('Pagamento do pacote registrado com sucesso!', 'success')
-        return redirect(url_for('financeiro.listar'))
-        
-    return render_template('registrar_pagamento.html', pacote=pacote)
+
+        # Volta para a tela de origem (ex: ficha do cliente) quando informada,
+        # senão cai no Financeiro como antes.
+        destino = request.form.get('origem')
+        return redirect(destino or url_for('financeiro.listar'))
+
+    origem = request.args.get('origem') or request.referrer
+    return render_template('registrar_pagamento.html', pacote=pacote, origem=origem)
 
 
 @financeiro_bp.route('/despesas')
