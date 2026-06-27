@@ -143,6 +143,23 @@ def editar(atendimento_id):
     return redirect(request.referrer or url_for('clientes.detalhe', cliente_id=atendimento.cliente_id))
 
 
+@agenda_bp.route('/atendimento/toggle_pronto/<int:atendimento_id>', methods=['POST'])
+@login_required
+def toggle_pronto(atendimento_id):
+    """
+    Alterna o status 'pronto para buscar' de um atendimento.
+    Só tem efeito prático quando o tutor é quem busca o pet (não Táxi
+    Dog) — ver Atendimento.eh_busca_pelo_tutor — mas a alternância em si
+    não é bloqueada aqui: se um atendimento antigo sem 'transporte'
+    preenchido precisar ser marcado manualmente, a equipe ainda pode
+    fazer isso, só não verá o botão na tela por padrão.
+    """
+    atendimento = db.get_or_404(Atendimento, atendimento_id)
+    atendimento.pronto_para_buscar = not atendimento.pronto_para_buscar
+    db.session.commit()
+    return redirect(request.referrer or url_for('agenda.historico'))
+
+
 @agenda_bp.route('/atendimento/excluir/<int:atendimento_id>', methods=['POST'])
 @login_required
 def excluir(atendimento_id):

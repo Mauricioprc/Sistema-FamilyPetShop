@@ -160,6 +160,15 @@ class Atendimento(db.Model):
     taxa_maquina = db.Column(db.Float, default=0.0)
     valor_liquido = db.Column(db.Float, nullable=True)
 
+    # Indica se o serviço já terminou e o pet está pronto para ser
+    # buscado. Conceito independente de status_presenca: este último
+    # trata de "o pet chegou/faltou no início do atendimento", enquanto
+    # pronto_para_buscar trata do fim do atendimento. Só faz sentido
+    # operacionalmente quando o tutor é quem vai buscar o pet (ver
+    # property eh_busca_pelo_tutor abaixo) — daí o default False e o uso
+    # restrito a esse cenário nas telas que consomem este campo.
+    pronto_para_buscar = db.Column(db.Boolean, default=False, nullable=False)
+
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc),
                            onupdate=lambda: datetime.now(timezone.utc), nullable=False)
@@ -175,6 +184,32 @@ class Atendimento(db.Model):
         """Verifica se este atendimento foi originado pelo site."""
         # Se tem horario preferido, adicionais ou transporte, assumimos que veio do site
         return bool(self.horario_preferido or self.transporte or self.adicionais)
+
+    @property
+    def eh_busca_pelo_tutor(self):
+        """
+        True quando é o próprio tutor quem busca o pet no petshop (ele NÃO
+        usa Táxi Dog neste atendimento).
+
+        Fonte de verdade principal: Cliente.endereco. O cadastro de
+        cliente (form_cliente.html) usa a presença de endereço como sinal
+        de que o cliente "usa Táxi Dog" — o campo de tela 'usa_taxi' é só
+        um controle de UI (não tem 'name', nunca é enviado no submit); o
+        que de fato persiste é o endereço preenchido ou vazio. Cliente
+        COM endereço = usa Táxi Dog = petshop busca e leva = este
+        atendimento NÃO entra no fluxo de "pronto para buscar".
+
+        Quando o atendimento veio do formulário público de solicitação
+        online, ele tem o campo 'transporte' preenchido de forma
+        explícita para aquele pedido específico ('Eu vou levar' ou
+        'Táxi Dog') — nesse caso, damos prioridade a esse dado mais
+        específico (cobre o caso de um cliente que normalmente usa Táxi
+        Dog, mas numa ocasião pontual escolheu ele mesmo levar e buscar).
+        """
+        if self.transporte:
+            return self.transporte == 'Eu vou levar'
+        return not bool(self.cliente.endereco)
+
 
 
 class Despesa(db.Model):

@@ -70,30 +70,28 @@ GRAPH_API_VERSION = 'v21.0'
 
 MSG_BOAS_VINDAS = (
     '🐾 Olá! Bem-vindo(a) ao *Family Pet Shop*!\n'
-    'Eu sou o Rex seu assistente virtual🤖'
     'Em que posso te ajudar?'
 )
 
-LINK_AGENDAMENTO = 'https://familypetshopp.pythonanywhere.com/insta'
+LINK_AGENDAMENTO = '[link do agendamento online]'
 
 RESPOSTAS = {
     'horario': (
         '🕐 *Nosso horário de atendimento:*\n\n'
-        'Segunda a sexta: 09h às 18h\n'
-        'Sábado: Fechado\n'
+        'Segunda a sexta: 08h às 18h\n'
+        'Sábado: 08h às 13h\n'
         'Domingo: fechado'
     ),
     'endereco': (
         '📍 *Nosso endereço:*\n\n'
-        'Rua 2 de novembro, 41 - Centro\n'
-        'Boa Espe - MG\n\n'
-        'https://maps.app.goo.gl/GpSCJxqxHvjyYyXY9'
+        'Rua Exemplo, 123 - Centro\n'
+        'Três Pontas - MG\n\n'
+        'https://maps.google.com/?q=Rua+Exemplo+123+Tres+Pontas+MG'
     ),
     'agendar': (
-        '✂️🛁 *Agende o banho ou a tosa do seu pet de forma rápida e prática!*\n\n' 
-        'No site da Family Pet Shop você pode consultar os valores dos serviços ' 
-        'e escolher o melhor dia e horário para o atendimento.\n\n'
-        '📅 Clique no link abaixo para fazer seu agendamento:\n\n'
+        '✂️🛁 *Agende seu banho ou tosa*\n\n'
+        'Acesse o link abaixo para escolher o serviço, ver os preços e '
+        'marcar o melhor horário:\n\n'
         f'{LINK_AGENDAMENTO}'
     ),
 }
@@ -106,7 +104,7 @@ MSG_FALLBACK = (
 
 MSG_IDENTIDADE_NEGADA = (
     'Sem problemas! 🐾\n'
-    'Foi acionada nossa equipe para te atender melhor. '
+    'Foi acionada nossa equipe para te atender pessoalmente. '
     'Aguarde só um instante.'
 )
 
@@ -117,17 +115,13 @@ MSG_CLIENTE_NAO_ENCONTRADO = (
 
 LINK_SITE = 'https://familypetshopp.pythonanywhere.com/insta'
 
-
 MSG_SAIDA = (
-    'Foi um prazer falar com você! 🐾\n\n'
-    'Se precisar de qualquer coisa, é só me chamar. Eu, o Rex, estarei por aqui para ajudar! 🐶\n\n'
-    'Enquanto isso, aproveite para conhecer um pouco mais da Family Pet Shop. '
-    'No nosso site você encontra fotos dos nossos trabalhos, informações sobre os serviços '
-    'e ainda pode deixar o seu feedback. 💙\n\n'
-    '🌐 Acesse:\n'
+    'Tudo bem! 🐾 Se precisar de algo, é só mandar uma mensagem que '
+    'estou à disposição.\n\n'
+    'Aproveita e dá uma olhadinha no nosso site — tem nossos trabalhos '
+    'e você pode deixar um feedback pra gente também: \n'
     f'{LINK_SITE}'
 )
-
 
 # Palavras-chave reconhecidas em texto livre. Tudo em minúsculo, sem
 # acento (ver _normalizar_texto). Cada uma já pula direto para a etapa
@@ -242,9 +236,12 @@ def _enviar_menu_meus_dados(telefone: str) -> None:
         ('dados_pacotes', 'Meus Pacotes'),
         ('dados_pendencias', 'Pendências'),
     ])
-    # 4ª opção numa segunda mensagem (limite de 3 botões por mensagem).
-    # Sempre visível, pra nunca depender só do cliente adivinhar uma
-    # palavra de saída.
+    # 4ª opção numa mensagem própria (limite de 3 botões por mensagem).
+    _enviar_botoes(telefone, 'Ou:', [
+        ('dados_pet_pronto', 'Meu Pet Está Pronto?'),
+    ])
+    # Saída sempre visível, pra nunca depender só do cliente adivinhar
+    # uma palavra de saída.
     _enviar_botoes(telefone, 'Ou, se já for tudo:', [
         ('encerrar', 'Encerrar'),
     ])
@@ -367,6 +364,46 @@ def _texto_pendencias(cliente: Cliente) -> str:
     return 'Nenhuma pendência em aberto no seu cadastro. Tudo certo! ✅'
 
 
+def _texto_pet_pronto(cliente: Cliente) -> str:
+    """
+    Responde se o(s) pet(s) do cliente que estão no petshop hoje já
+    terminaram o serviço. Só considera atendimentos de hoje com
+    status_presenca == 'Presente' — isto é, o pet já chegou e ainda
+    está sendo atendido (ou já terminou).
+    """
+    atendimentos_hoje = (
+        Atendimento.query
+        .filter(
+            Atendimento.cliente_id == cliente.id,
+            Atendimento.data == date.today(),
+            Atendimento.status_presenca == StatusAtendimento.PRESENTE.value,
+        )
+        .all()
+    )
+
+    if not atendimentos_hoje:
+        return (
+            f'Não encontrei nenhum atendimento do(a) {cliente.nome_pet} '
+            f'em andamento hoje no petshop. 🐶'
+        )
+
+    prontos = [a for a in atendimentos_hoje if a.pronto_para_buscar]
+    em_andamento = [a for a in atendimentos_hoje if not a.pronto_para_buscar]
+
+    if prontos and not em_andamento:
+        return f'🎉 Sim! O(a) {cliente.nome_pet} já está pronto(a) para buscar!'
+
+    if em_andamento and not prontos:
+        return f'Ainda não! O(a) {cliente.nome_pet} ainda está em atendimento. 🛁'
+
+    # Caso raro: mais de um atendimento hoje, com status misto
+    return (
+        f'O(a) {cliente.nome_pet} tem mais de um atendimento hoje: '
+        f'{len(prontos)} já pronto(s) e {len(em_andamento)} ainda em '
+        f'andamento. Fale com a equipe para mais detalhes.'
+    )
+
+
 # ---------------------------------------------------------------------------
 # Webhook
 # ---------------------------------------------------------------------------
@@ -440,6 +477,8 @@ def _tratar_resposta_com_estado(telefone: str, mensagem: dict, etapa: str, clien
             _enviar_texto(telefone, _texto_pacotes_ativos(cliente))
         elif botao_id == 'dados_pendencias':
             _enviar_texto(telefone, _texto_pendencias(cliente))
+        elif botao_id == 'dados_pet_pronto':
+            _enviar_texto(telefone, _texto_pet_pronto(cliente))
         else:
             _enviar_menu_meus_dados(telefone)
         # Mantém o cliente nesse menu para novas consultas, até expirar

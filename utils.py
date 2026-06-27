@@ -374,6 +374,33 @@ def formatar_telefone_whatsapp(telefone: str) -> str:
         return telefone
 
 
+def chave_comparacao_telefone(telefone: str, digitos: int = 9) -> str:
+    """
+    Extrai os últimos N dígitos de um telefone para fins de comparação.
+
+    Usada para casar o número que chega no webhook do WhatsApp (formato
+    internacional completo, ex: 5535988117265) com o telefone salvo no
+    cadastro do cliente — que no banco real está em formatos inconsistentes
+    (com/sem DDD, com/sem máscara, às vezes só 9 dígitos).
+
+    Comparar apenas os últimos dígitos evita depender de DDI/DDD estarem
+    presentes ou formatados igual nos dois lados.
+
+    Args:
+        telefone: Telefone em qualquer formato
+        digitos: Quantidade de dígitos finais a manter (padrão 9, cobre
+                 celular com nono dígito sem DDD)
+
+    Returns:
+        String com os últimos `digitos` dígitos, ou string vazia se o
+        telefone não tiver dígitos suficientes para uma comparação confiável.
+    """
+    numero = ''.join(filter(str.isdigit, telefone or ''))
+    if len(numero) < digitos:
+        return ''
+    return numero[-digitos:]
+
+
 def validar_telefone(telefone: str) -> bool:
     """
     Validar se telefone tem formato mínimo válido

@@ -71,6 +71,22 @@
                 {% endif %}
             </div>
 
+            {% if a.status_presenca == 'Presente' and a.eh_busca_pelo_tutor %}
+            <form action="{{ url_for('agenda.toggle_pronto', atendimento_id=a.id) }}" method="POST" class="mb-2">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                {% if a.pronto_para_buscar %}
+                <button type="submit" class="btn btn-success btn-sm w-100">
+                    <i class="bi bi-check-circle-fill"></i> Pronto para buscar
+                    <span class="ms-1" style="opacity: 0.7;">(desfazer)</span>
+                </button>
+                {% else %}
+                <button type="submit" class="btn btn-outline-success btn-sm w-100">
+                    <i class="bi bi-bell"></i> Marcar como pronto
+                </button>
+                {% endif %}
+            </form>
+            {% endif %}
+
             <hr class="mt-2 mb-3">
             
             <p class="mb-1"><strong>Serviço:</strong> {{ a.nome_servico }}</p>
