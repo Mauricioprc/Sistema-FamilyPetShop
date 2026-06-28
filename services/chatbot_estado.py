@@ -1,17 +1,20 @@
 """
-Estado de conversa do chatbot do WhatsApp.
+Estado de conversa e alertas de atendente do chatbot do WhatsApp.
 
 O webhook do WhatsApp é stateless por natureza (cada POST da Meta chega
 isolado), mas o fluxo de "consultar meus dados" precisa lembrar, entre uma
-mensagem e a próxima, que aquele telefone já confirmou identidade.
+mensagem e a próxima, que aquele telefone já confirmou identidade. Este
+módulo também guarda os alertas de "cliente pediu para falar com
+atendente", consumidos pelo header do sistema via polling.
 
 Por que um arquivo SQLite próprio em vez de:
   - dicionário em memória: o app roda com 2 workers gunicorn (ver wsgi.py),
     cada worker tem sua própria memória — a confirmação de identidade
     poderia "desaparecer" se a resposta do cliente cair no outro worker.
   - tabela no banco principal (petshop.db) via SQLAlchemy: exigiria nova
-    migration Alembic só para um dado totalmente transitório, que não tem
-    valor histórico nenhum.
+    migration Alembic só para dados totalmente transitórios, que não tem
+    valor histórico nenhum (nem o estado de conversa, nem os alertas —
+    depois de respondidos ou adiados, não precisam ficar guardados).
 
 Este arquivo usa sqlite3 puro (stdlib, sem dependência nova) e fica em
 instance/chatbot_estado.db — separado do petshop.db, pode ser apagado a
@@ -41,6 +44,14 @@ def _conectar() -> sqlite3.Connection:
             etapa TEXT NOT NULL,
             cliente_id INTEGER,
             atualizado_em REAL NOT NULL
+        )
+    ''')
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS alerta_atendente (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            telefone TEXT NOT NULL,
+            nome_cliente TEXT,
+            criado_em REAL NOT NULL
         )
     ''')
     return conn
@@ -95,3 +106,44 @@ def obter_estado(telefone: str) -> tuple[str, int | None] | None:
 def limpar_estado(telefone: str) -> None:
     with _conexao() as conn:
         conn.execute('DELETE FROM estado_conversa WHERE telefone = ?', (telefone,))
+
+
+# ---------------------------------------------------------------------------
+# Alertas de "cliente pediu para falar com atendente"
+# ---------------------------------------------------------------------------
+
+def criar_alerta(telefone: str, nome_cliente: str | None) -> None:
+    """
+    Registra um pedido de atendimento humano. Não há deduplicação: se o
+    mesmo cliente pedir de novo antes do primeiro alerta ser resolvido,
+    fica um alerta por pedido — a equipe decide ignorar repetidos
+    clicando 'Responder mais tarde' em cada um.
+    """
+    with _conexao() as conn:
+        conn.execute(
+            'INSERT INTO alerta_atendente (telefone, nome_cliente, criado_em) VALUES (?, ?, ?)',
+            (telefone, nome_cliente, time.time())
+        )
+
+
+def listar_alertas() -> list[dict]:
+    """Retorna todos os alertas pendentes, mais antigos primeiro."""
+    with _conexao() as conn:
+        rows = conn.execute(
+            'SELECT id, telefone, nome_cliente, criado_em FROM alerta_atendente ORDER BY criado_em ASC'
+        ).fetchall()
+
+    return [
+        {'id': r[0], 'telefone': r[1], 'nome_cliente': r[2], 'criado_em': r[3]}
+        for r in rows
+    ]
+
+
+def contar_alertas() -> int:
+    with _conexao() as conn:
+        return conn.execute('SELECT COUNT(*) FROM alerta_atendente').fetchone()[0]
+
+
+def remover_alerta(alerta_id: int) -> None:
+    with _conexao() as conn:
+        conn.execute('DELETE FROM alerta_atendente WHERE id = ?', (alerta_id,))

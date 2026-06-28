@@ -70,6 +70,7 @@ GRAPH_API_VERSION = 'v21.0'
 
 MSG_BOAS_VINDAS = (
     '🐾 Olá! Bem-vindo(a) ao *Family Pet Shop*!\n'
+    'Eu sou o Rex, seu assistente virtual. 🤖🐶\n\n'
     'Em que posso te ajudar?'
 )
 
@@ -78,20 +79,21 @@ LINK_AGENDAMENTO = '[link do agendamento online]'
 RESPOSTAS = {
     'horario': (
         '🕐 *Nosso horário de atendimento:*\n\n'
-        'Segunda a sexta: 08h às 18h\n'
-        'Sábado: 08h às 13h\n'
-        'Domingo: fechado'
+        'Segunda a sexta: 09h às 18h\n'
+        'Sábado: Fechado\n'
+        'Domingo: Fechado'
     ),
     'endereco': (
         '📍 *Nosso endereço:*\n\n'
-        'Rua Exemplo, 123 - Centro\n'
-        'Três Pontas - MG\n\n'
-        'https://maps.google.com/?q=Rua+Exemplo+123+Tres+Pontas+MG'
+        'Rua 2 de novembro, 41 - Centro\n'
+        'Boa Esperança - MG\n\n'
+        'https://maps.app.goo.gl/UhwFo73f7opdqRT58'
     ),
     'agendar': (
-        '✂️🛁 *Agende seu banho ou tosa*\n\n'
-        'Acesse o link abaixo para escolher o serviço, ver os preços e '
-        'marcar o melhor horário:\n\n'
+        '✂️🛁 *Agende o banho ou a tosa do seu pet de forma rápida e prática!*\n\n'
+        'No site da Family Pet Shop você pode consultar os valores dos serviços ' 
+        'e escolher o melhor dia e horário para o atendimento.\n\n' 
+        '📅 Clique no link abaixo para fazer seu agendamento:\n\n' 
         f'{LINK_AGENDAMENTO}'
     ),
 }
@@ -122,6 +124,8 @@ MSG_SAIDA = (
     'e você pode deixar um feedback pra gente também: \n'
     f'{LINK_SITE}'
 )
+
+MSG_PERGUNTA_CONTINUAR = 'Posso te ajudar com mais alguma coisa?'
 
 # Palavras-chave reconhecidas em texto livre. Tudo em minúsculo, sem
 # acento (ver _normalizar_texto). Cada uma já pula direto para a etapa
@@ -244,6 +248,33 @@ def _enviar_menu_meus_dados(telefone: str) -> None:
     # uma palavra de saída.
     _enviar_botoes(telefone, 'Ou, se já for tudo:', [
         ('encerrar', 'Encerrar'),
+    ])
+
+
+def _enviar_pergunta_continuar(telefone: str) -> None:
+    """
+    Pergunta de fechamento mandada após qualquer resposta de conteúdo
+    (horário, endereço, agendar, ou qualquer consulta dentro de 'Meus
+    Dados'). 'Sim' leva o cliente de volta a um menu (qual menu depende
+    de onde ele veio — ver etapa 'aguardando_continuar:*' no handler de
+    estado); 'Não' encerra com a mensagem de despedida.
+    """
+    _enviar_botoes(telefone, MSG_PERGUNTA_CONTINUAR, [
+        ('continuar_sim', 'Sim'),
+        ('continuar_nao', 'Não'),
+    ])
+
+
+def _enviar_oferta_atendente(telefone: str, texto_contexto: str) -> None:
+    """
+    Usada quando o bot bate no limite do que sabe resolver (mensagem não
+    reconhecida, ou cliente não encontrado pelo telefone). Em vez de só
+    desistir, oferece o botão que registra um alerta para a equipe (ver
+    services/chatbot_estado.criar_alerta), consumido pelo sininho no
+    header do sistema.
+    """
+    _enviar_botoes(telefone, texto_contexto, [
+        ('aguardar_atendente', 'Aguardar atendente'),
     ])
 
 
@@ -432,7 +463,7 @@ def _iniciar_consulta_meus_dados(telefone: str) -> None:
     cliente = _buscar_cliente_por_telefone(telefone)
     if not cliente:
         chatbot_estado.limpar_estado(telefone)
-        _enviar_texto(telefone, MSG_CLIENTE_NAO_ENCONTRADO)
+        _enviar_oferta_atendente(telefone, MSG_CLIENTE_NAO_ENCONTRADO)
         return
 
     chatbot_estado.definir_etapa(telefone, 'aguardando_confirmacao_identidade', cliente.id)
@@ -463,7 +494,7 @@ def _tratar_resposta_com_estado(telefone: str, mensagem: dict, etapa: str, clien
         cliente = Cliente.query.get(cliente_id)
         if not cliente:
             chatbot_estado.limpar_estado(telefone)
-            _enviar_texto(telefone, MSG_CLIENTE_NAO_ENCONTRADO)
+            _enviar_oferta_atendente(telefone, MSG_CLIENTE_NAO_ENCONTRADO)
             return
 
         if mensagem.get('type') != 'interactive':
@@ -481,9 +512,33 @@ def _tratar_resposta_com_estado(telefone: str, mensagem: dict, etapa: str, clien
             _enviar_texto(telefone, _texto_pet_pronto(cliente))
         else:
             _enviar_menu_meus_dados(telefone)
-        # Mantém o cliente nesse menu para novas consultas, até expirar
-        # pelo TTL ou ele mandar algo fora do fluxo.
-        chatbot_estado.definir_etapa(telefone, 'menu_meus_dados', cliente_id)
+            return
+        # Após entregar a resposta, pergunta se o cliente quer continuar
+        # (volta para este mesmo menu de dados se disser Sim) em vez de
+        # simplesmente reenviar o menu ou ficar mudo.
+        chatbot_estado.definir_etapa(telefone, 'aguardando_continuar:menu_dados', cliente_id)
+        _enviar_pergunta_continuar(telefone)
+        return
+
+    if etapa.startswith('aguardando_continuar:'):
+        destino = etapa.split(':', 1)[1]  # 'menu_dados' ou 'menu_principal'
+
+        if mensagem.get('type') != 'interactive':
+            # Texto livre em vez de Sim/Não -> repete a pergunta
+            _enviar_pergunta_continuar(telefone)
+            return
+
+        botao_id = mensagem['interactive']['button_reply']['id']
+        if botao_id == 'continuar_sim':
+            if destino == 'menu_dados':
+                chatbot_estado.definir_etapa(telefone, 'menu_meus_dados', cliente_id)
+                _enviar_menu_meus_dados(telefone)
+            else:
+                chatbot_estado.limpar_estado(telefone)
+                _enviar_menu_principal(telefone)
+        else:
+            chatbot_estado.limpar_estado(telefone)
+            _enviar_texto(telefone, MSG_SAIDA)
         return
 
 
@@ -495,8 +550,10 @@ def _tratar_resposta_sem_estado(telefone: str, mensagem: dict) -> None:
             _iniciar_consulta_meus_dados(telefone)
         elif botao_id in BOTOES_RESPOSTA_DIRETA:
             _enviar_texto(telefone, RESPOSTAS[botao_id])
+            chatbot_estado.definir_etapa(telefone, 'aguardando_continuar:menu_principal')
+            _enviar_pergunta_continuar(telefone)
         else:
-            _enviar_texto(telefone, MSG_FALLBACK)
+            _enviar_oferta_atendente(telefone, MSG_FALLBACK)
         return
 
     if mensagem['type'] == 'text':
@@ -507,12 +564,14 @@ def _tratar_resposta_sem_estado(telefone: str, mensagem: dict) -> None:
             _iniciar_consulta_meus_dados(telefone)
         elif etapa in BOTOES_RESPOSTA_DIRETA:
             _enviar_texto(telefone, RESPOSTAS[etapa])
+            chatbot_estado.definir_etapa(telefone, 'aguardando_continuar:menu_principal')
+            _enviar_pergunta_continuar(telefone)
         else:
             # Sem palavra-chave reconhecida -> menu completo
             _enviar_menu_principal(telefone)
         return
 
-    _enviar_texto(telefone, MSG_FALLBACK)
+    _enviar_oferta_atendente(telefone, MSG_FALLBACK)
 
 
 @chatbot_bp.route('/whatsapp', methods=['POST'])
@@ -538,6 +597,17 @@ def receber_mensagem():
         if _mensagem_pede_saida(mensagem):
             chatbot_estado.limpar_estado(telefone)
             _enviar_texto(telefone, MSG_SAIDA)
+            return jsonify({'status': 'recebido'}), 200
+
+        if (mensagem.get('type') == 'interactive'
+                and mensagem.get('interactive', {}).get('button_reply', {}).get('id') == 'aguardar_atendente'):
+            # O estado (e o nome do cliente que ele guardaria) já foi
+            # limpo antes de oferecer este botão nos dois pontos onde
+            # isso acontece (cliente não encontrado, ou tipo de mensagem
+            # não tratado) — por isso o alerta vai sem nome. A equipe
+            # ainda tem o telefone, que é o essencial para responder.
+            chatbot_estado.criar_alerta(telefone, None)
+            _enviar_texto(telefone, MSG_IDENTIDADE_NEGADA)
             return jsonify({'status': 'recebido'}), 200
 
         estado = chatbot_estado.obter_estado(telefone)
