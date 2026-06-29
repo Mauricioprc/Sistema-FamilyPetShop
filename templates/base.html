@@ -57,6 +57,11 @@
               <i class="bi bi-clock-history"></i> Banho / Tosa
             </a>
           </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'conversas.listar' %}active{% endif %}" href="{{ url_for('conversas.listar') }}">
+              <i class="bi bi-chat-dots-fill"></i> Conversas
+            </a>
+          </li>
           {% set admin_eps = ['agenda.agenda_do_dia','dashboard.dashboard','financeiro.listar','financeiro.despesas','financeiro.registrar_pagamento','financeiro.registrar_pagamento_pacote','financeiro.nova_despesa','financeiro.editar_despesa'] %}
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle {% if request.endpoint in admin_eps %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown">
@@ -69,17 +74,6 @@
               <li><a class="dropdown-item" href="{{ url_for('financeiro.despesas') }}"><i class="bi bi-cart-x-fill"></i> Despesas</a></li>
             </ul>
           </li>
-          {% if current_user.is_authenticated %}
-          <li class="nav-item dropdown" id="alertasAtendenteWrapper">
-            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" id="alertasAtendenteToggle">
-              <i class="bi bi-bell-fill"></i> Atendimentos
-              <span class="badge rounded-pill bg-danger ms-1 d-none" id="alertasAtendenteBadge">0</span>
-            </a>
-            <ul class="dropdown-menu dropdown-menu-end" style="min-width: 300px;" id="alertasAtendenteLista">
-              <li><span class="dropdown-item-text text-muted small">Nenhum pedido de atendimento.</span></li>
-            </ul>
-          </li>
-          {% endif %}
         </ul>
       </div>
     </div>
@@ -117,103 +111,6 @@
   
   <!-- ✅ JS LOCAL COM CACHE BUSTING -->
   <script src="{{ cache_bust('js/main.js') }}"></script>
-
-  {% if current_user.is_authenticated %}
-  <script>
-    (function () {
-      const badge = document.getElementById('alertasAtendenteBadge');
-      const lista = document.getElementById('alertasAtendenteLista');
-      if (!badge || !lista) return;
-
-      function formatarTelefoneExibicao(telefone) {
-        // Mostra só os últimos dígitos de forma legível, sem assumir
-        // formato fixo de DDI/DDD (o telefone que chega no webhook é
-        // só dígitos, ex: 5535988117265).
-        const digitos = (telefone || '').replace(/\D/g, '');
-        if (digitos.length < 4) return telefone;
-        return digitos.slice(0, -9) + ' ' + digitos.slice(-9, -4) + '-' + digitos.slice(-4);
-      }
-
-      function renderizarLista(alertas) {
-        if (!alertas.length) {
-          lista.innerHTML = '<li><span class="dropdown-item-text text-muted small">Nenhum pedido de atendimento.</span></li>';
-          return;
-        }
-
-        lista.innerHTML = alertas.map(function (a) {
-          const nome = a.nome_cliente || 'Cliente';
-          const telefoneExibicao = formatarTelefoneExibicao(a.telefone);
-          const linkWhatsapp = 'https://wa.me/' + a.telefone.replace(/\D/g, '');
-
-          return (
-            '<li class="px-3 py-2 border-bottom">' +
-              '<div class="fw-medium">' + nome + '</div>' +
-              '<div class="text-muted small mb-2">' + telefoneExibicao + '</div>' +
-              '<div class="d-flex gap-2">' +
-                '<a href="' + linkWhatsapp + '" target="_blank" rel="noopener" ' +
-                   'class="btn btn-success btn-sm flex-fill alerta-responder" data-id="' + a.id + '">' +
-                  '<i class="bi bi-whatsapp"></i> Responder' +
-                '</a>' +
-                '<button type="button" class="btn btn-outline-secondary btn-sm flex-fill alerta-depois" data-id="' + a.id + '">' +
-                  'Mais tarde' +
-                '</button>' +
-              '</div>' +
-            '</li>'
-          );
-        }).join('');
-      }
-
-      function resolverAlerta(id) {
-        fetch('/alertas/' + id + '/resolver', { method: 'POST' })
-          .catch(function (e) { console.error('Falha ao resolver alerta:', e); });
-      }
-
-      lista.addEventListener('click', function (ev) {
-        const botaoResponder = ev.target.closest('.alerta-responder');
-        const botaoDepois = ev.target.closest('.alerta-depois');
-        const botao = botaoResponder || botaoDepois;
-        if (!botao) return;
-
-        // Para "Responder", deixa o link abrir o WhatsApp normalmente
-        // (não usa preventDefault) e só resolve o alerta em paralelo.
-        if (botaoDepois) ev.preventDefault();
-        resolverAlerta(botao.dataset.id);
-        botao.closest('li').remove();
-        atualizarContagem();
-      });
-
-      function atualizarContagem() {
-        fetch('/alertas/contagem')
-          .then(function (r) { return r.json(); })
-          .then(function (data) {
-            const total = data.total || 0;
-            if (total > 0) {
-              badge.textContent = total;
-              badge.classList.remove('d-none');
-            } else {
-              badge.classList.add('d-none');
-            }
-          })
-          .catch(function (e) { console.error('Falha ao consultar alertas:', e); });
-      }
-
-      function atualizarLista() {
-        fetch('/alertas/listar')
-          .then(function (r) { return r.json(); })
-          .then(function (data) { renderizarLista(data.alertas || []); })
-          .catch(function (e) { console.error('Falha ao listar alertas:', e); });
-      }
-
-      // Carrega a lista só quando o dropdown é aberto (evita refazer a
-      // mesma consulta toda vez que o polling de contagem roda).
-      document.getElementById('alertasAtendenteToggle')
-        .addEventListener('click', atualizarLista);
-
-      atualizarContagem();
-      setInterval(atualizarContagem, 60000); // 1 minuto, conforme combinado
-    })();
-  </script>
-  {% endif %}
 
   {% if current_user.is_authenticated %}
   <!-- Aviso de backup periódico (a cada 7 dias) -->

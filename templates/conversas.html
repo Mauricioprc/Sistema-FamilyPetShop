@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+{% block title %}Conversas — Family Pet Shop{% endblock %}
+{% block content %}
+
+<div class="d-flex" style="height: calc(100vh - 100px); border: 1px solid #dee2e6; border-radius: 12px; overflow: hidden;">
+
+  <!-- Coluna esquerda: lista de conversas -->
+  <div id="listaConversasCol" style="width: 320px; min-width: 280px; border-right: 1px solid #dee2e6; overflow-y: auto; background: #fff;">
+    <div class="p-3 border-bottom">
+      <h5 class="mb-0" style="color: #0c233f;"><i class="bi bi-chat-dots-fill"></i> Conversas</h5>
+      <small class="text-muted">Hoje + pendentes de outros dias</small>
+    </div>
+    <ul class="list-group list-group-flush" id="listaConversas">
+      <li class="list-group-item text-muted small text-center py-4">Carregando...</li>
+    </ul>
+  </div>
+
+  <!-- Coluna direita: conversa aberta -->
+  <div class="flex-grow-1 d-flex flex-column" style="background: #f5f6f8;">
+    <div id="conversaVazia" class="d-flex align-items-center justify-content-center flex-grow-1 text-muted">
+      <div class="text-center">
+        <i class="bi bi-whatsapp" style="font-size: 3rem; opacity: 0.3;"></i>
+        <p class="mt-2">Selecione uma conversa para ver o histórico</p>
+      </div>
+    </div>
+
+    <div id="conversaAberta" class="d-none flex-column flex-grow-1" style="display: flex;">
+      <div class="p-3 border-bottom bg-white d-flex justify-content-between align-items-center">
+        <div>
+          <div class="fw-medium" id="conversaNome">—</div>
+          <small class="text-muted" id="conversaTelefone">—</small>
+        </div>
+        <div>
+          <button type="button" class="btn btn-success btn-sm" id="btnAtender">
+            <i class="bi bi-headset"></i> Atender
+          </button>
+          <button type="button" class="btn btn-outline-secondary btn-sm d-none" id="btnFinalizar">
+            Finalizar atendimento
+          </button>
+        </div>
+      </div>
+
+      <div class="flex-grow-1 overflow-auto p-3" id="historicoMensagens" style="display: flex; flex-direction: column; gap: 8px;">
+      </div>
+
+      <div class="p-3 border-top bg-white d-flex gap-2">
+        <input type="text" class="form-control" id="campoMensagem" placeholder="Escreva uma mensagem...">
+        <button type="button" class="btn btn-primary-custom" id="btnEnviarMensagem">
+          <i class="bi bi-send-fill"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  let telefoneAtual = null;
+  let pollingHistorico = null;
+
+  function escaparHtml(texto) {
+    const div = document.createElement('div');
+    div.textContent = texto || '';
+    return div.innerHTML;
+  }
+
+  function formatarHora(timestamp) {
+    return new Date(timestamp * 1000).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function formatarTelefoneExibicao(telefone) {
+    const digitos = (telefone || '').replace(/\D/g, '');
+    if (digitos.length < 4) return telefone;
+    return digitos.slice(0, -9) + ' ' + digitos.slice(-9, -4) + '-' + digitos.slice(-4);
+  }
+
+  function carregarLista() {
+    fetch('/conversas/lista')
+      .then(r => r.json())
+      .then(data => renderizarLista(data.conversas || []))
+      .catch(e => console.error('Falha ao listar conversas:', e));
+  }
+
+  function renderizarLista(conversas) {
+    const ul = document.getElementById('listaConversas');
+    if (!conversas.length) {
+      ul.innerHTML = '<li class="list-group-item text-muted small text-center py-4">Nenhuma conversa hoje.</li>';
+      return;
+    }
+
+    ul.innerHTML = conversas.map(c => {
+      const nome = escaparHtml(c.nome_cliente || 'Cliente');
+      const tel = escaparHtml(formatarTelefoneExibicao(c.telefone));
+      const ativo = c.telefone === telefoneAtual ? 'active' : '';
+      let badge = '';
+      if (c.atendimento_ativo) {
+        badge = '<span class="badge bg-success ms-1">Atendendo</span>';
+      } else if (c.tem_alerta_pendente) {
+        badge = '<span class="badge bg-danger ms-1">Pendente</span>';
+      } else if (c.bot_em_silencio) {
+        badge = '<span class="badge bg-secondary ms-1">Cortesia</span>';
+      }
+      return (
+        '<li class="list-group-item list-group-item-action ' + ativo + '" style="cursor:pointer" data-telefone="' + escaparHtml(c.telefone) + '" data-nome="' + nome + '">' +
+          '<div class="d-flex justify-content-between align-items-start">' +
+            '<div><div class="fw-medium">' + nome + '</div><small class="text-muted">' + tel + '</small></div>' +
+            badge +
+          '</div>' +
+        '</li>'
+      );
+    }).join('');
+
+    ul.querySelectorAll('li[data-telefone]').forEach(li => {
+      li.addEventListener('click', () => abrirConversa(li.dataset.telefone, li.dataset.nome));
+    });
+  }
+
+  function abrirConversa(telefone, nome) {
+    telefoneAtual = telefone;
+    document.getElementById('conversaVazia').classList.add('d-none');
+    document.getElementById('conversaAberta').classList.remove('d-none');
+    document.getElementById('conversaNome').textContent = nome || 'Cliente';
+    document.getElementById('conversaTelefone').textContent = formatarTelefoneExibicao(telefone);
+
+    carregarHistorico();
+    if (pollingHistorico) clearInterval(pollingHistorico);
+    pollingHistorico = setInterval(carregarHistorico, 10000);
+
+    carregarLista(); // para marcar como 'active' na lista
+  }
+
+  function carregarHistorico() {
+    if (!telefoneAtual) return;
+    fetch('/conversas/' + telefoneAtual + '/historico')
+      .then(r => r.json())
+      .then(data => {
+        renderizarHistorico(data.mensagens || []);
+        atualizarBotoesAtendimento(data.atendimento_ativo);
+      })
+      .catch(e => console.error('Falha ao carregar histórico:', e));
+  }
+
+  function renderizarHistorico(mensagens) {
+    const container = document.getElementById('historicoMensagens');
+    container.innerHTML = mensagens.map(m => {
+      const deCliente = m.direcao === 'entrada';
+      const alinhamento = deCliente ? 'flex-start' : 'flex-end';
+      const cor = deCliente ? '#fff' : '#0c233f';
+      const corTexto = deCliente ? '#212529' : '#fff';
+      const remetente = m.direcao === 'entrada' ? '' : (m.direcao === 'saida_atendente' ? 'Você: ' : 'Rex (bot): ');
+      return (
+        '<div style="display:flex; justify-content:' + alinhamento + ';">' +
+          '<div style="max-width:70%; background:' + cor + '; color:' + corTexto + '; border-radius:12px; padding:8px 12px; box-shadow:0 1px 2px rgba(0,0,0,0.1);">' +
+            '<div class="small fw-medium" style="opacity:0.7;">' + remetente + '</div>' +
+            '<div style="white-space:pre-wrap;">' + escaparHtml(m.conteudo) + '</div>' +
+            '<div class="text-end" style="font-size:0.7rem; opacity:0.6;">' + formatarHora(m.enviado_em) + '</div>' +
+          '</div>' +
+        '</div>'
+      );
+    }).join('');
+    container.scrollTop = container.scrollHeight;
+  }
+
+  function atualizarBotoesAtendimento(atendimentoAtivo) {
+    document.getElementById('btnAtender').classList.toggle('d-none', atendimentoAtivo);
+    document.getElementById('btnFinalizar').classList.toggle('d-none', !atendimentoAtivo);
+  }
+
+  document.getElementById('btnAtender').addEventListener('click', () => {
+    if (!telefoneAtual) return;
+    fetch('/conversas/' + telefoneAtual + '/atender', { method: 'POST' })
+      .then(() => { carregarHistorico(); carregarLista(); });
+  });
+
+  document.getElementById('btnFinalizar').addEventListener('click', () => {
+    if (!telefoneAtual) return;
+    fetch('/conversas/' + telefoneAtual + '/finalizar', { method: 'POST' })
+      .then(() => { carregarHistorico(); carregarLista(); });
+  });
+
+  function enviarMensagem() {
+    const campo = document.getElementById('campoMensagem');
+    const texto = campo.value.trim();
+    if (!texto || !telefoneAtual) return;
+
+    fetch('/conversas/' + telefoneAtual + '/enviar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ texto: texto })
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.status === 'ok') {
+          campo.value = '';
+          carregarHistorico();
+        }
+      })
+      .catch(e => console.error('Falha ao enviar mensagem:', e));
+  }
+
+  document.getElementById('btnEnviarMensagem').addEventListener('click', enviarMensagem);
+  document.getElementById('campoMensagem').addEventListener('keydown', e => {
+    if (e.key === 'Enter') enviarMensagem();
+  });
+
+  carregarLista();
+  setInterval(carregarLista, 30000);
+})();
+</script>
+
+{% endblock %}
