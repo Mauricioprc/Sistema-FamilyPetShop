@@ -1,7 +1,7 @@
 from datetime import date, datetime, timedelta
 from flask_login import login_required
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from sqlalchemy import func
+from sqlalchemy import func, case, or_
 from extensions import db
 from models import Cliente, Atendimento, Pacote
 
@@ -58,10 +58,25 @@ def listar():
         termo = f"%{query}%"
         q = q.filter((Cliente.nome_tutor.like(termo)) | (Cliente.nome_pet.like(termo)))
 
-    pagination = q.order_by(Cliente.nome_tutor).paginate(page=page, per_page=12, error_out=False)
-    
+    # Cadastro incompleto: sem telefone válido ou sem endereço cadastrado
+    cadastro_incompleto = case(
+        (or_(
+            Cliente.telefone.is_(None),
+            Cliente.telefone == '',
+            func.length(Cliente.telefone) < 8,
+            Cliente.endereco.is_(None),
+            Cliente.endereco == ''
+        ), 0),
+        else_=1
+    )
+
+    pagination = q.order_by(cadastro_incompleto, Cliente.nome_tutor).paginate(page=page, per_page=12, error_out=False)
+
     # Adicionar dados extras para os cards
     for cliente in pagination.items:
+        cliente.cadastro_incompleto = (
+            not cliente.telefone or len(cliente.telefone) < 8 or not cliente.endereco
+        )
         ultimo = Atendimento.query.filter_by(cliente_id=cliente.id, status_presenca='Presente').order_by(Atendimento.data.desc()).first()
         cliente.dias_ausente = (hoje - ultimo.data).days if ultimo else None
         
