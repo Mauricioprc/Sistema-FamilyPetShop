@@ -4,6 +4,7 @@
 # Banco de dados — nunca versionar o de produção
 *.db
 instance/
+_desativado/
 
 # Python
 __pycache__/

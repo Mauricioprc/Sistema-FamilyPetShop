@@ -73,8 +73,13 @@
                                     <option value="Cartão de Crédito">Cartão de Crédito</option>
                                     <option value="Cartão de Débito">Cartão de Débito</option>
                                     <option value="Dinheiro">Dinheiro Físico</option>
+                                    <option value="Troca">Troca</option>
                                 </select>
                             </div>
+                        </div>
+
+                        <div id="aviso_troca" class="alert alert-info py-2 small d-none">
+                            <i class="bi bi-info-circle me-1"></i> Serviço prestado em troca — o valor total deste atendimento será zerado.
                         </div>
 
                         <div id="secao_maquininha" class="card bg-success-subtle border-0 rounded-4 mb-4 d-none">
@@ -122,6 +127,7 @@
 document.addEventListener("DOMContentLoaded", function() {
     const selectMetodo = document.getElementById("metodo_pagamento");
     const secaoMaquininha = document.getElementById("secao_maquininha");
+    const avisoTroca = document.getElementById("aviso_troca");
     const inputTaxa = document.getElementById("taxa_maquina");
     const labelLiquido = document.getElementById("label_valor_liquido");
     const inputLiquido = document.getElementById("valor_liquido");
@@ -153,19 +159,24 @@ document.addEventListener("DOMContentLoaded", function() {
     selectMetodo.addEventListener("change", function() {
         const metodo = this.value;
 
+        secaoMaquininha.classList.add("d-none");
+        avisoTroca.classList.add("d-none");
+
         if (metodo === "Cartão de Crédito" || metodo === "Cartão de Débito") {
             secaoMaquininha.classList.remove("d-none");
-            
+
             // Lógica de Memória Independente
             if (metodo === "Cartão de Crédito") {
                 inputTaxa.value = localStorage.getItem(KEY_CREDITO) || "";
             } else {
                 inputTaxa.value = localStorage.getItem(KEY_DEBITO) || "";
             }
-            
+
             calcularLiquido();
+        } else if (metodo === "Troca") {
+            avisoTroca.classList.remove("d-none");
+            inputLiquido.value = "0.00";
         } else {
-            secaoMaquininha.classList.add("d-none");
             inputLiquido.value = valorBruto.toFixed(2);
         }
     });

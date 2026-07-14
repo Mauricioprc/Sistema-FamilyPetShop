@@ -57,11 +57,6 @@
               <i class="bi bi-clock-history"></i> Banho / Tosa
             </a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link {% if request.endpoint == 'conversas.listar' %}active{% endif %}" href="{{ url_for('conversas.listar') }}">
-              <i class="bi bi-chat-dots-fill"></i> Conversas
-            </a>
-          </li>
           {% set admin_eps = ['agenda.agenda_do_dia','dashboard.dashboard','financeiro.listar','financeiro.despesas','financeiro.registrar_pagamento','financeiro.registrar_pagamento_pacote','financeiro.nova_despesa','financeiro.editar_despesa'] %}
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle {% if request.endpoint in admin_eps %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown">

@@ -98,11 +98,18 @@ def registrar_pagamento(atendimento_id):
         atendimento.status_pagamento = 'Pago'
         atendimento.data_pagamento = datetime.strptime(request.form['data_pagamento'], '%Y-%m-%d').date()
         atendimento.metodo_pagamento = request.form['metodo_pagamento']
-        
-        # Salvando as taxas da maquininha
-        atendimento.taxa_maquina = float(request.form.get('taxa_maquina', 0) or 0)
-        atendimento.valor_liquido = float(request.form.get('valor_liquido', atendimento.preco))
-        
+
+        if atendimento.metodo_pagamento == 'Troca':
+            # Serviço prestado em troca (sem valor monetário) — zera o
+            # total para não contar como receita nem aparecer como dívida.
+            atendimento.preco = 0
+            atendimento.taxa_maquina = 0
+            atendimento.valor_liquido = 0
+        else:
+            # Salvando as taxas da maquininha
+            atendimento.taxa_maquina = float(request.form.get('taxa_maquina', 0) or 0)
+            atendimento.valor_liquido = float(request.form.get('valor_liquido', atendimento.preco))
+
         db.session.commit()
         flash('Pagamento do banho avulso registrado com sucesso!', 'success')
         return redirect(url_for('financeiro.listar'))
@@ -118,11 +125,18 @@ def registrar_pagamento_pacote(pacote_id):
         pacote.status_pagamento = 'Pago'
         pacote.data_pagamento = datetime.strptime(request.form['data_pagamento'], '%Y-%m-%d').date()
         pacote.metodo_pagamento = request.form['metodo_pagamento']
-        
-        # Salvando as taxas da maquininha
-        pacote.taxa_maquina = float(request.form.get('taxa_maquina', 0) or 0)
-        pacote.valor_liquido = float(request.form.get('valor_liquido', pacote.preco_pacote))
-        
+
+        if pacote.metodo_pagamento == 'Troca':
+            # Pacote prestado em troca (sem valor monetário) — zera o
+            # total para não contar como receita nem aparecer como dívida.
+            pacote.preco_pacote = 0
+            pacote.taxa_maquina = 0
+            pacote.valor_liquido = 0
+        else:
+            # Salvando as taxas da maquininha
+            pacote.taxa_maquina = float(request.form.get('taxa_maquina', 0) or 0)
+            pacote.valor_liquido = float(request.form.get('valor_liquido', pacote.preco_pacote))
+
         db.session.commit()
         flash('Pagamento do pacote registrado com sucesso!', 'success')
 

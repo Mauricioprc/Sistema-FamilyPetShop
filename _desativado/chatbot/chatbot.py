@@ -1,4 +1,10 @@
 """
+DESATIVADO — este módulo não é mais importado por app.py nem registrado
+como blueprint. Mantido aqui só de referência; para reativar, é preciso
+mover chatbot.py e chatbot_estado.py de volta para rotas/ e services/,
+restaurar as variáveis WHATSAPP_* em config.py e o registro do blueprint
+em app.py.
+
 Chatbot de FAQ + autoatendimento via WhatsApp Cloud API.
 
 Continua sem IA: todo reconhecimento é por palavra-chave fixa ou clique em
@@ -57,8 +63,9 @@ from flask import Blueprint, current_app, jsonify, request
 
 from extensions import csrf
 from models import Atendimento, Cliente, Pacote, StatusAtendimento, StatusPacote
-from services import chatbot_estado
 from utils import chave_comparacao_telefone
+
+from . import chatbot_estado
 
 logger = logging.getLogger(__name__)
 chatbot_bp = Blueprint('chatbot', __name__, url_prefix='/webhook')
