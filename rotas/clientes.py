@@ -72,29 +72,52 @@ def listar():
 
     pagination = q.order_by(cadastro_incompleto, Cliente.nome_tutor).paginate(page=page, per_page=12, error_out=False)
 
-    # Adicionar dados extras para os cards
+    # Dados extras para os cards, calculados em lote (evita N+1 queries no loop)
+    cliente_ids = [c.id for c in pagination.items]
+
+    ultima_presenca_map = {}
+    divida_atend_map = {}
+    divida_pacot_map = {}
+
+    if cliente_ids:
+        ultimas_presencas = db.session.query(
+            Atendimento.cliente_id,
+            func.max(Atendimento.data).label('ultima_data')
+        ).filter(
+            Atendimento.cliente_id.in_(cliente_ids),
+            Atendimento.status_presenca == 'Presente'
+        ).group_by(Atendimento.cliente_id).all()
+        ultima_presenca_map = {r.cliente_id: r.ultima_data for r in ultimas_presencas}
+
+        dividas_atend = db.session.query(
+            Atendimento.cliente_id,
+            func.sum(Atendimento.preco).label('total')
+        ).filter(
+            Atendimento.cliente_id.in_(cliente_ids),
+            Atendimento.status_pagamento == 'Pendente',
+            Atendimento.status_presenca == 'Presente',
+            Atendimento.data <= limite_atraso # <-- Aplicamos o limite
+        ).group_by(Atendimento.cliente_id).all()
+        divida_atend_map = {r.cliente_id: r.total or 0 for r in dividas_atend}
+
+        dividas_pacot = db.session.query(
+            Pacote.cliente_id,
+            func.sum(Pacote.preco_pacote).label('total')
+        ).filter(
+            Pacote.cliente_id.in_(cliente_ids),
+            Pacote.status_pagamento == 'Pendente',
+            Pacote.data_vencimento <= limite_atraso # <-- Aplicamos o limite
+        ).group_by(Pacote.cliente_id).all()
+        divida_pacot_map = {r.cliente_id: r.total or 0 for r in dividas_pacot}
+
     for cliente in pagination.items:
         cliente.cadastro_incompleto = (
             not cliente.telefone or len(cliente.telefone) < 8 or not cliente.endereco
         )
-        ultimo = Atendimento.query.filter_by(cliente_id=cliente.id, status_presenca='Presente').order_by(Atendimento.data.desc()).first()
-        cliente.dias_ausente = (hoje - ultimo.data).days if ultimo else None
-        
-        # Calcular dívida total (APENAS 10+ DIAS)
-        divida_atend = db.session.query(func.sum(Atendimento.preco)).filter(
-            Atendimento.cliente_id == cliente.id, 
-            Atendimento.status_pagamento == 'Pendente',
-            Atendimento.status_presenca == 'Presente',
-            Atendimento.data <= limite_atraso # <-- Aplicamos o limite
-        ).scalar() or 0
-        divida_pacot = db.session.query(func.sum(Pacote.preco_pacote)).filter(
-            Pacote.cliente_id == cliente.id, 
-            Pacote.status_pagamento == 'Pendente',
-            Pacote.data_vencimento <= limite_atraso # <-- Aplicamos o limite
-        ).scalar() or 0
-        
-        cliente.total_divida = divida_atend + divida_pacot
-        
+        ultima_data = ultima_presenca_map.get(cliente.id)
+        cliente.dias_ausente = (hoje - ultima_data).days if ultima_data else None
+        cliente.total_divida = divida_atend_map.get(cliente.id, 0) + divida_pacot_map.get(cliente.id, 0)
+
     return render_template('index.html', clientes=pagination.items, pagination=pagination, query=query, filtro_ativo=filtro)
 
 @clientes_bp.route('/adicionar', methods=['GET', 'POST'])

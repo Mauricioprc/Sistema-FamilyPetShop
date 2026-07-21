@@ -15,7 +15,7 @@
 
     <div class="row g-4">
         {% for atendimento in solicitacoes %}
-        <div class="col-12 col-md-6 col-xl-4">
+        <div class="col-12 col-md-6 col-xl-4" id="card-solicitacao-{{ atendimento.id }}">
             <div class="card h-100 card-solicitacao shadow-sm border-0">
                 <div class="card-body p-4 d-flex flex-column">
                     
@@ -137,6 +137,7 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="https://unpkg.com/imask"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   // 1. Máscara de preço
@@ -147,6 +148,25 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
+  // Remove o card e o modal de uma solicitação da tela, e mostra a mensagem
+  // vazia caso não sobre nenhuma.
+  function removerSolicitacao(atendimentoId) {
+    document.getElementById('card-solicitacao-' + atendimentoId)?.remove();
+    document.getElementById('modalConfirmar-' + atendimentoId)?.remove();
+
+    const restantes = document.querySelectorAll('[id^="card-solicitacao-"]');
+    if (restantes.length === 0) {
+      const row = document.querySelector('.row.g-4');
+      if (row) {
+        row.innerHTML = `
+          <div class="col-12 text-center py-5">
+            <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+            <p class="text-muted mt-2">Nenhuma solicitação pendente.</p>
+          </div>`;
+      }
+    }
+  }
+
   // 2. Lógica de Confirmação (AJAX)
   document.querySelectorAll('.form-confirmar-final').forEach(form => {
     form.addEventListener('submit', async function(e) {
@@ -155,19 +175,22 @@ document.addEventListener('DOMContentLoaded', function() {
       submitBtn.disabled = true;
       submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Processando...';
 
+      const atendimentoId = this.action.match(/(\d+)(?:\/)?$/)?.[1];
+
       try {
         const res = await fetch(this.action, { method: 'POST', body: new FormData(this) });
         const data = await res.json();
-        if (data.success) { 
-          window.open(data.whatsapp_url, '_blank'); 
-          location.reload(); 
+        if (data.success) {
+          window.open(data.whatsapp_url, '_blank');
+          mostrarAjaxAlert('success', 'Agendamento confirmado com sucesso!');
+          if (atendimentoId) removerSolicitacao(atendimentoId);
         } else {
-          alert('Erro: ' + (data.message || 'Erro desconhecido'));
+          mostrarAjaxAlert('danger', 'Erro: ' + (data.message || 'Erro desconhecido'));
           submitBtn.disabled = false;
           submitBtn.innerText = 'CONFIRMAR E AVISAR CLIENTE';
         }
       } catch (err) {
-        alert('Erro na comunicação com o servidor.');
+        mostrarAjaxAlert('danger', 'Erro na comunicação com o servidor.');
         submitBtn.disabled = false;
       }
     });
@@ -177,15 +200,22 @@ document.addEventListener('DOMContentLoaded', function() {
   document.querySelectorAll('.btn-recusar-acao').forEach(btn => {
     btn.addEventListener('click', async function() {
       if (confirm('Deseja recusar esta solicitação e avisar o cliente?')) {
+        const atendimentoId = this.dataset.url.match(/(\d+)(?:\/)?$/)?.[1];
+        this.disabled = true;
         try {
             const res = await fetch(this.dataset.url, { method: 'POST' });
             const data = await res.json();
-            if (data.success) { 
-              window.open(data.whatsapp_url, '_blank'); 
-              location.reload(); 
+            if (data.success) {
+              window.open(data.whatsapp_url, '_blank');
+              mostrarAjaxAlert('success', 'Solicitação recusada.');
+              if (atendimentoId) removerSolicitacao(atendimentoId);
+            } else {
+              mostrarAjaxAlert('danger', data.message || 'Erro ao processar recusa.');
+              this.disabled = false;
             }
         } catch (err) {
-            alert('Erro ao processar recusa.');
+            mostrarAjaxAlert('danger', 'Erro ao processar recusa.');
+            this.disabled = false;
         }
       }
     });

@@ -31,6 +31,8 @@ def main():
         sys.exit(1)
 
     conn = sqlite3.connect(str(caminho_banco))
+    conn.execute('PRAGMA journal_mode=WAL;')
+    conn.execute('PRAGMA busy_timeout=5000;')
     colunas = [row[1] for row in conn.execute('PRAGMA table_info(atendimento)')]
 
     if 'pronto_para_buscar' in colunas:

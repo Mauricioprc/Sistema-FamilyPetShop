@@ -1,6 +1,6 @@
 from datetime import date, datetime, timedelta
 from flask_login import login_required
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
 from extensions import db
 from models import Atendimento, Pacote, Cliente, StatusAtendimento, StatusPagamento
 from rotas import clientes
@@ -12,6 +12,10 @@ from services.agenda_service import (
 from utils import devolver_credito, parse_preco
 
 agenda_bp = Blueprint('agenda', __name__)
+
+
+def _is_ajax():
+    return request.headers.get('X-Requested-With') == 'XMLHttpRequest'
 
 
 @agenda_bp.route('/agenda')
@@ -157,6 +161,15 @@ def toggle_pronto(atendimento_id):
     atendimento = db.get_or_404(Atendimento, atendimento_id)
     atendimento.pronto_para_buscar = not atendimento.pronto_para_buscar
     db.session.commit()
+
+    if _is_ajax():
+        return jsonify({
+            'success': True,
+            'message': 'Pronto para buscar!' if atendimento.pronto_para_buscar else 'Marcação desfeita.',
+            'atendimento_id': atendimento_id,
+            'pronto_para_buscar': atendimento.pronto_para_buscar
+        })
+
     return redirect(request.referrer or url_for('agenda.historico'))
 
 
@@ -195,6 +208,17 @@ def confirmar_presenca_route(atendimento_id):
 
     data_str = atendimento.data.isoformat() if atendimento else date.today().isoformat()
 
+    if _is_ajax():
+        resposta = {
+            'success': sucesso,
+            'message': msg,
+            'atendimento_id': atendimento_id,
+            'precisa_renovar': bool(dados_renovacao)
+        }
+        if dados_renovacao:
+            resposta['redirect_url'] = url_for('agenda.agenda_do_dia', data=data_str)
+        return jsonify(resposta)
+
     flash(msg, 'success' if sucesso else 'danger')
     return redirect(url_for('agenda.agenda_do_dia', data=data_str))
 
@@ -208,6 +232,8 @@ def marcar_falta(atendimento_id):
     if atendimento.pacote_id:
         pacote = Pacote.query.get(atendimento.pacote_id)
         if not pacote:
+            if _is_ajax():
+                return jsonify({'success': False, 'message': 'Pacote nao encontrado.'})
             flash('Pacote nao encontrado.', 'danger')
             return redirect(url_for('agenda.agenda_do_dia',
                                     data=atendimento.data.isoformat()))
@@ -239,12 +265,24 @@ def marcar_falta(atendimento_id):
             pacote_id=atendimento.pacote_id,
             status_presenca=StatusAtendimento.AGENDADO.value
         ))
-        flash(f'Falta registrada. Reagendado para {nova_data.strftime("%d/%m/%Y")}.', 'warning')
+        msg = f'Falta registrada. Reagendado para {nova_data.strftime("%d/%m/%Y")}.'
+        categoria = 'warning'
     else:
         atendimento.status_pagamento = StatusPagamento.CANCELADO.value
-        flash('Falta registrada. Atendimento avulso cancelado.', 'danger')
+        msg = 'Falta registrada. Atendimento avulso cancelado.'
+        categoria = 'danger'
 
     db.session.commit()
+
+    if _is_ajax():
+        return jsonify({
+            'success': True,
+            'message': msg,
+            'category': categoria,
+            'atendimento_id': atendimento_id
+        })
+
+    flash(msg, categoria)
     return redirect(url_for('agenda.agenda_do_dia', data=atendimento.data.isoformat()))
 
 

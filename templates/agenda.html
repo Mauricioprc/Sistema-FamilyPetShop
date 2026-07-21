@@ -18,7 +18,7 @@
 
   <div class="row">
     {% for atendimento in atendimentos %}
-      <div class="col-lg-4 col-md-6 mb-4">
+      <div class="col-lg-4 col-md-6 mb-4" id="card-atendimento-{{ atendimento.id }}">
         <div class="card h-100 shadow-sm {% if atendimento.cliente.tem_divida_atrasada %}border-danger border-2{% endif %}">
                 <div class="card-header d-flex justify-content-between align-items-center">
                   <h5 class="mb-0">
@@ -68,14 +68,16 @@
           </div>
           <div class="card-footer bg-light">
             <div class="d-grid gap-2 d-md-flex justify-content-md-center">
-              <form action="{{ url_for('agenda.confirmar_presenca_route', atendimento_id=atendimento.id) }}" method="POST" class="w-100">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" class="btn btn-primary-custom w-100"><i class="bi bi-check-lg"></i> Presente</button>
-              </form>
-              <form action="{{ url_for('agenda.marcar_falta', atendimento_id=atendimento.id) }}" method="POST" class="w-100">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" class="btn btn-outline-danger w-100"><i class="bi bi-x-lg"></i> Faltou</button>
-              </form>
+              <button type="button" class="btn btn-primary-custom w-100 btn-acao-agenda"
+                      data-url="{{ url_for('agenda.confirmar_presenca_route', atendimento_id=atendimento.id) }}"
+                      data-atendimento-id="{{ atendimento.id }}">
+                <i class="bi bi-check-lg"></i> Presente
+              </button>
+              <button type="button" class="btn btn-outline-danger w-100 btn-acao-agenda"
+                      data-url="{{ url_for('agenda.marcar_falta', atendimento_id=atendimento.id) }}"
+                      data-atendimento-id="{{ atendimento.id }}">
+                <i class="bi bi-x-lg"></i> Faltou
+              </button>
             </div>
           </div>
         </div>
@@ -223,6 +225,45 @@ async function abrirWpp(url) {
 document.querySelectorAll('.btn-wpp-api').forEach(btn => {
     btn.addEventListener('click', function() {
         abrirWpp(this.dataset.url);
+    });
+});
+
+// -----------------------------------------------------------------------
+// Presente / Faltou — AJAX, sem reload
+// -----------------------------------------------------------------------
+document.querySelectorAll('.btn-acao-agenda').forEach(btn => {
+    btn.addEventListener('click', async function() {
+        const botoesDoCard = this.closest('.card-footer').querySelectorAll('.btn-acao-agenda');
+        botoesDoCard.forEach(b => b.disabled = true);
+        const textoOriginal = this.innerHTML;
+        this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+        try {
+            const res = await fetch(this.dataset.url, {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                mostrarAjaxAlert(data.category || 'success', data.message);
+                const card = document.getElementById('card-atendimento-' + data.atendimento_id);
+                if (card) {
+                    card.remove();
+                }
+                if (data.redirect_url) {
+                    window.location.href = data.redirect_url;
+                }
+            } else {
+                mostrarAjaxAlert('danger', data.message || 'Erro ao processar a ação.');
+                botoesDoCard.forEach(b => b.disabled = false);
+                this.innerHTML = textoOriginal;
+            }
+        } catch (e) {
+            mostrarAjaxAlert('danger', 'Erro de comunicação com o servidor. Tente novamente.');
+            botoesDoCard.forEach(b => b.disabled = false);
+            this.innerHTML = textoOriginal;
+        }
     });
 });
 

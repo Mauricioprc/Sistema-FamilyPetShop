@@ -72,19 +72,18 @@
             </div>
 
             {% if a.status_presenca == 'Presente' and a.eh_busca_pelo_tutor %}
-            <form action="{{ url_for('agenda.toggle_pronto', atendimento_id=a.id) }}" method="POST" class="mb-2">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                {% if a.pronto_para_buscar %}
-                <button type="submit" class="btn btn-success btn-sm w-100">
+            <div class="mb-2" id="toggle-pronto-{{ a.id }}">
+                <button type="button" class="btn btn-sm w-100 btn-toggle-pronto {{ 'btn-success' if a.pronto_para_buscar else 'btn-outline-success' }}"
+                        data-url="{{ url_for('agenda.toggle_pronto', atendimento_id=a.id) }}"
+                        data-pronto="{{ 'true' if a.pronto_para_buscar else 'false' }}">
+                    {% if a.pronto_para_buscar %}
                     <i class="bi bi-check-circle-fill"></i> Pronto para buscar
                     <span class="ms-1" style="opacity: 0.7;">(desfazer)</span>
-                </button>
-                {% else %}
-                <button type="submit" class="btn btn-outline-success btn-sm w-100">
+                    {% else %}
                     <i class="bi bi-bell"></i> Marcar como pronto
+                    {% endif %}
                 </button>
-                {% endif %}
-            </form>
+            </div>
             {% endif %}
 
             <hr class="mt-2 mb-3">
@@ -123,6 +122,46 @@ async function abrirWpp(url) {
 }
 document.querySelectorAll('.btn-wpp-api').forEach(btn => {
     btn.addEventListener('click', function() { abrirWpp(this.dataset.url); });
+});
+
+// -----------------------------------------------------------------------
+// Pronto para buscar — AJAX, sem reload
+// -----------------------------------------------------------------------
+document.querySelectorAll('.btn-toggle-pronto').forEach(btn => {
+    btn.addEventListener('click', async function() {
+        this.disabled = true;
+        const textoOriginal = this.innerHTML;
+        this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+        try {
+            const res = await fetch(this.dataset.url, {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                mostrarAjaxAlert('success', data.message);
+                if (data.pronto_para_buscar) {
+                    this.classList.remove('btn-outline-success');
+                    this.classList.add('btn-success');
+                    this.innerHTML = '<i class="bi bi-check-circle-fill"></i> Pronto para buscar <span class="ms-1" style="opacity: 0.7;">(desfazer)</span>';
+                } else {
+                    this.classList.remove('btn-success');
+                    this.classList.add('btn-outline-success');
+                    this.innerHTML = '<i class="bi bi-bell"></i> Marcar como pronto';
+                }
+            } else {
+                mostrarAjaxAlert('danger', data.message || 'Erro ao atualizar.');
+                this.innerHTML = textoOriginal;
+            }
+        } catch (e) {
+            mostrarAjaxAlert('danger', 'Erro de comunicação com o servidor. Tente novamente.');
+            this.innerHTML = textoOriginal;
+        } finally {
+            this.disabled = false;
+        }
+    });
 });
 </script>
 {% endblock %}

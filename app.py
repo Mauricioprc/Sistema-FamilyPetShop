@@ -196,6 +196,10 @@ def _registrar_rotas(app):
     def index():
         return redirect(url_for('agenda.agenda_do_dia'))
 
+    @app.route('/offline')
+    def offline():
+        return render_template('offline.html')
+
 
 if __name__ == '__main__':
     import sys
