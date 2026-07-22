@@ -44,6 +44,11 @@
         {% else %}
              <span class="badge bg-secondary"><i class="bi bi-check-circle"></i> Pago</span>
         {% endif %}
+        {% if pacote.vencimento_customizado %}
+          <small class="d-block text-muted mt-1" title="Este pacote nao segue mais a regra automatica de vencimento (1o banho)" style="font-size: 11px;">
+              <i class="bi bi-pin-angle-fill"></i> Vencimento fixo: dia {{ pacote.data_vencimento.day if pacote.data_vencimento else '?' }}
+          </small>
+        {% endif %}
       </div>
 
       <div class="d-flex gap-2 align-items-center">
@@ -86,6 +91,12 @@
                     <label class="form-label">Preço (R$)</label>
                     <input type="text" name="preco_pacote" class="form-control money-mask" value="{{ "%.2f"|format(pacote.preco_pacote)|replace('.', ',') }}" required>
                 </div>
+              </div>
+              <div class="mb-1">
+                <label class="form-label">Vencimento</label>
+                <input type="date" name="data_vencimento" class="form-control"
+                       value="{{ pacote.data_vencimento.isoformat() if pacote.data_vencimento else '' }}">
+                <small class="text-muted d-block mt-1">Se alterado, o vencimento passa a se repetir fixo todo mês nesse dia.</small>
               </div>
           </div>
           <div class="modal-footer border-0">

@@ -117,7 +117,9 @@ def confirmar_presenca(atendimento_id: int) -> tuple[bool, str, dict | None]:
                         'preco_pacote': pacote.preco_pacote,
                         'dia_semana_fixo': pacote.dia_semana_fixo,
                         'tipo_agendamento': pacote.tipo_agendamento,
-                        'ultima_data_str': ultimo.data.isoformat() if ultimo else None
+                        'ultima_data_str': ultimo.data.isoformat() if ultimo else None,
+                        'vencimento_customizado': pacote.vencimento_customizado,
+                        'data_vencimento_anterior': pacote.data_vencimento.isoformat() if pacote.data_vencimento else None
                     }
 
     try:

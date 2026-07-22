@@ -43,6 +43,11 @@
                 <i class="bi bi-check-circle"></i> Pago{% if pacote.data_pagamento %} em {{ pacote.data_pagamento.strftime('%d/%m/%Y') }}{% endif %}
              </span>
         {% endif %}
+        {% if pacote.vencimento_customizado %}
+          <small class="d-block text-muted mt-1" title="Este pacote nao segue mais a regra automatica de vencimento (1o banho)" style="font-size: 11px;">
+              <i class="bi bi-pin-angle-fill"></i> Vencimento fixo: dia {{ pacote.data_vencimento.day if pacote.data_vencimento else '?' }}
+          </small>
+        {% endif %}
       </div>
 
       <div class="d-flex gap-2 align-items-center" onclick="event.stopPropagation();">
@@ -51,6 +56,9 @@
               <i class="bi bi-cash-coin"></i> Dar baixa
           </a>
           {% endif %}
+          <button type="button" class="btn btn-sm btn-light border rounded-circle" data-bs-toggle="modal" data-bs-target="#editarPacote-cliente-{{ pacote.id }}" title="Editar pacote">
+              <i class="bi bi-pencil"></i>
+          </button>
           <form action="{{ url_for('pacotes.excluir', pacote_id=pacote.id) }}" method="POST" class="m-0" onsubmit="return confirm('Tem certeza que deseja excluir este pacote?')">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <button type="submit" class="btn btn-sm btn-light border rounded-circle text-danger">
@@ -59,6 +67,45 @@
           </form>
       </div>
 
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="editarPacote-cliente-{{ pacote.id }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 rounded-4 shadow">
+      <form action="{{ url_for('pacotes.editar', pacote_id=pacote.id) }}" method="POST">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="modal-header border-0">
+            <h5 class="modal-title fw-bold">Editar Pacote</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+              <div class="mb-3">
+                <label class="form-label">Nome do Serviço</label>
+                <input type="text" name="nome_servico" class="form-control" value="{{ pacote.nome_servico }}" required>
+              </div>
+              <div class="row">
+                <div class="col-6 mb-3">
+                    <label class="form-label">Créditos Totais</label>
+                    <input type="number" name="creditos_totais" class="form-control" value="{{ pacote.creditos_totais }}" min="{{ pacote.creditos_usados }}" required>
+                </div>
+                <div class="col-6 mb-3">
+                    <label class="form-label">Preço (R$)</label>
+                    <input type="text" name="preco_pacote" class="form-control money-mask" value="{{ "%.2f"|format(pacote.preco_pacote)|replace('.', ',') }}" required>
+                </div>
+              </div>
+              <div class="mb-1">
+                <label class="form-label">Vencimento</label>
+                <input type="date" name="data_vencimento" class="form-control"
+                       value="{{ pacote.data_vencimento.isoformat() if pacote.data_vencimento else '' }}">
+                <small class="text-muted d-block mt-1">Se alterado, o vencimento passa a se repetir fixo todo mês nesse dia.</small>
+              </div>
+          </div>
+          <div class="modal-footer border-0">
+            <button type="submit" class="btn btn-primary-custom w-100 rounded-pill">Salvar Alterações</button>
+          </div>
+      </form>
     </div>
   </div>
 </div>

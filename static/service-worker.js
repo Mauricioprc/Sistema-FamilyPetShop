@@ -1,4 +1,4 @@
-const CACHE_NAME = 'familypet-v2';
+const CACHE_NAME = 'familypet-v3';
 const OFFLINE_URL = '/offline';
 
 // App shell: assets essenciais, sem hash de cache-busting nem páginas dinâmicas
@@ -36,6 +36,11 @@ function staleWhileRevalidate(event) {
     caches.open(CACHE_NAME).then(cache =>
       cache.match(event.request, { ignoreSearch: true }).then(cached => {
         const fetchPromise = fetch(event.request).then(networkResponse => {
+          // Remove a entrada antiga (com query string diferente) antes de gravar a nova,
+          // pra não acumular versões antigas do mesmo asset indefinidamente.
+          if (cached && cached.url !== event.request.url) {
+            cache.delete(cached.url);
+          }
           cache.put(event.request, networkResponse.clone());
           return networkResponse;
         }).catch(() => cached);

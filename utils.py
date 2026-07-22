@@ -1,3 +1,4 @@
+import calendar
 import locale
 import os
 import uuid
@@ -304,6 +305,19 @@ def calcular_datas_renovacao(
     except Exception as e:
         logger.error(f"Erro ao calcular datas de renovação: {e}")
         return []
+
+
+def proximo_vencimento_mensal(data_anterior: date) -> date:
+    """
+    Retorna o mesmo dia do mes seguinte a data_anterior. Se o mes
+    seguinte nao tiver esse dia (ex: dia 31 em fevereiro), usa o
+    ultimo dia daquele mes.
+    """
+    ano = data_anterior.year + (1 if data_anterior.month == 12 else 0)
+    mes = 1 if data_anterior.month == 12 else data_anterior.month + 1
+    ultimo_dia_mes = calendar.monthrange(ano, mes)[1]
+    dia = min(data_anterior.day, ultimo_dia_mes)
+    return date(ano, mes, dia)
 
 
 # ============================================

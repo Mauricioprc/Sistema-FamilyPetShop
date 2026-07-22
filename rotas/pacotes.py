@@ -178,7 +178,17 @@ def editar(pacote_id):
         if novos_creditos >= pacote.creditos_usados:
             pacote.creditos_totais = novos_creditos
     except ValueError:
-        pass 
+        pass
+
+    nova_data_str = request.form.get('data_vencimento')
+    if nova_data_str:
+        try:
+            nova_data = datetime.strptime(nova_data_str, '%Y-%m-%d').date()
+            if nova_data != pacote.data_vencimento:
+                pacote.data_vencimento = nova_data
+                pacote.vencimento_customizado = True
+        except ValueError:
+            flash('Data de vencimento inválida.', 'danger')
 
     db.session.commit()
     flash('Pacote atualizado!', 'success')

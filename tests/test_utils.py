@@ -138,3 +138,28 @@ def test_calcular_datas_dia_correto():
     datas = calcular_datas_pacote(inicio, 3, 'semanal', 4)  # 4 = sexta
     for d in datas:
         assert d.weekday() == 4  # todas sextas
+
+
+# ---- proximo_vencimento_mensal ----
+
+def test_proximo_vencimento_mensal_mes_normal():
+    from utils import proximo_vencimento_mensal
+    assert proximo_vencimento_mensal(date(2025, 3, 15)) == date(2025, 4, 15)
+
+def test_proximo_vencimento_mensal_dia_31_para_fevereiro_ano_comum():
+    from utils import proximo_vencimento_mensal
+    # 2025 nao e bissexto -> fevereiro tem 28 dias
+    assert proximo_vencimento_mensal(date(2025, 1, 31)) == date(2025, 2, 28)
+
+def test_proximo_vencimento_mensal_dia_31_para_fevereiro_ano_bissexto():
+    from utils import proximo_vencimento_mensal
+    # 2024 e bissexto -> fevereiro tem 29 dias
+    assert proximo_vencimento_mensal(date(2024, 1, 31)) == date(2024, 2, 29)
+
+def test_proximo_vencimento_mensal_virada_de_ano():
+    from utils import proximo_vencimento_mensal
+    assert proximo_vencimento_mensal(date(2025, 12, 10)) == date(2026, 1, 10)
+
+def test_proximo_vencimento_mensal_dia_30_para_fevereiro():
+    from utils import proximo_vencimento_mensal
+    assert proximo_vencimento_mensal(date(2025, 1, 30)) == date(2025, 2, 28)

@@ -5,7 +5,7 @@ import json
 from datetime import datetime, date
 from extensions import db
 from models import Atendimento, Pacote, StatusPagamento
-from utils import parse_preco, calcular_datas_pacote, calcular_datas_renovacao
+from utils import parse_preco, calcular_datas_pacote, calcular_datas_renovacao, proximo_vencimento_mensal
 import logging
 
 logger = logging.getLogger(__name__)
@@ -105,11 +105,16 @@ def renovar_pacote(dados: dict) -> tuple[bool, str]:
         db.session.flush()
 
         datas = calcular_datas_renovacao(ultima, creditos, tipo, dia_semana)
-        
-        # --- NOVIDADE AQUI: Vencimento automático também na renovação! ---
-        if datas:
+
+        # Se o pacote anterior teve o vencimento customizado manualmente,
+        # o novo continua na mesma regra (fixo mensal) em vez de voltar a
+        # seguir a data do 1º banho do novo ciclo.
+        if dados.get('vencimento_customizado') and dados.get('data_vencimento_anterior'):
+            data_anterior = date.fromisoformat(dados['data_vencimento_anterior'])
+            novo_pacote.data_vencimento = proximo_vencimento_mensal(data_anterior)
+            novo_pacote.vencimento_customizado = True
+        elif datas:
             novo_pacote.data_vencimento = datas[0]
-        # -----------------------------------------------------------------
 
         for d in datas:
             db.session.add(Atendimento(

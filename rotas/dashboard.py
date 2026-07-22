@@ -1,11 +1,11 @@
 import calendar
-import urllib.parse
 from datetime import date, timedelta
 from flask import Blueprint, render_template, request
 from flask_login import login_required
 from sqlalchemy import func
 from extensions import db
-from models import Atendimento, Pacote, Despesa, Cliente
+from models import Atendimento, Pacote, Despesa
+from services.previsao_service import gerar_previsao_recebimento, listar_vencendo_no_mes
 
 dashboard_bp = Blueprint('dashboard', __name__)
 
@@ -105,34 +105,25 @@ def dashboard():
     receita_avulso = (fat_atend.bruto or 0) - (fat_atend.taxa or 0)
     receita_pacote = (fat_pacote.bruto or 0) - (fat_pacote.taxa or 0)
 
-    # --- 4. RADAR: CLIENTES SUMIDOS (30 a 45 dias) ---
-    limite_30 = hoje - timedelta(days=30)
-    limite_45 = hoje - timedelta(days=45)
-    
-    clientes_sumidos = []
-    todos_clientes = Cliente.query.filter_by(ativo=True).all()
-    
-    for c in todos_clientes:
-        ultimo = Atendimento.query.filter_by(cliente_id=c.id, status_presenca='Presente').order_by(Atendimento.data.desc()).first()
-        if ultimo and limite_45 <= ultimo.data <= limite_30:
-            dias_ausente = (hoje - ultimo.data).days
-            tel_limpo = c.telefone.replace('(', '').replace(')', '').replace('-', '').replace(' ', '')
-            
-            # MENSAGEM PRONTA DO WHATSAPP
-            msg = f"Olá {c.nome_tutor}, tudo bem? 🐾 Notamos que faz {dias_ausente} dias que o(a) {c.nome_pet} não nos visita! Estamos com saudades. Gostaria de agendar um horário?"
-            link_wpp = f"https://wa.me/55{tel_limpo}?text={urllib.parse.quote(msg)}"
+    # --- 9. PREVISÃO DE RECEBIMENTO ---
+    meses_nomes = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho',
+                   'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
 
-            clientes_sumidos.append({
-                'tutor': c.nome_tutor,
-                'pet': c.nome_pet,
-                'link_wpp': link_wpp,
-                'dias': dias_ausente
-            })
-    
-    clientes_sumidos = sorted(clientes_sumidos, key=lambda x: x['dias'], reverse=True)
+    modo_previsao = request.args.get('modo', 'previsao')
+    mes_previsao_sel = int(request.args.get('mes_previsao', hoje.month))
+    ano_previsao_sel = int(request.args.get('ano_previsao', hoje.year))
+
+    previsao = None
+    vencendo_itens = None
+
+    if modo_previsao == 'vencendo':
+        vencendo_itens = listar_vencendo_no_mes(mes_previsao_sel, ano_previsao_sel)
+    else:
+        previsao = gerar_previsao_recebimento(mes_previsao_sel, ano_previsao_sel)
 
     # Enviamos os valores já formatados como strings (R$ 1.500,00)
     return render_template('dashboard.html',
+                           hoje=hoje,
                            mes_selecionado=mes_sel, ano_selecionado=ano_sel, ano_atual=hoje.year,
                            recebido_bruto=formata_brl(recebido_bruto),
                            recebido_liquido=formata_brl(recebido_liquido),
@@ -146,4 +137,10 @@ def dashboard():
                            var_servicos=var_servicos,
                            receita_avulso=receita_avulso,
                            receita_pacote=receita_pacote,
-                           clientes_sumidos=clientes_sumidos)
+                           modo_previsao=modo_previsao,
+                           mes_previsao_sel=mes_previsao_sel,
+                           ano_previsao_sel=ano_previsao_sel,
+                           nome_mes_previsao=meses_nomes[mes_previsao_sel - 1],
+                           previsao=previsao,
+                           vencendo_itens=vencendo_itens,
+                           formata_brl=formata_brl)
