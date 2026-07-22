@@ -183,3 +183,20 @@ def test_totais_previsto_e_nominal(app, db):
 
     assert resultado_fev['total_vencimento_nominal'] == 200.0
     assert resultado_mar['total_previsto'] == 200.0
+
+
+def test_item_traz_data_vencimento_nominal_junto_com_previsao(app, db):
+    from services.previsao_service import gerar_previsao_recebimento
+    c = _criar_cliente(db, 'ComHistorico')
+    base = date(2026, 1, 1)
+    for i in range(3):
+        _criar_pacote_pago(db, c.id, base + timedelta(days=i * 10), base + timedelta(days=i * 10 + 5))
+
+    vencimento = date(2026, 2, 27)
+    _criar_pacote_pendente(db, c.id, vencimento, preco=200.0)
+
+    resultado = gerar_previsao_recebimento(3, 2026)
+    item = resultado['itens'][0]
+    assert item['data_vencimento'] == vencimento
+    assert item['data_prevista'] == vencimento + timedelta(days=5)
+    assert item['data_vencimento'] != item['data_prevista']

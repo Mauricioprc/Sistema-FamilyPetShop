@@ -198,6 +198,7 @@ def gerar_previsao_recebimento(mes: int, ano: int) -> dict:
             'cliente_nome': pend['cliente_nome'],
             'pet_nome': pend['pet_nome'],
             'valor': pend['valor'],
+            'data_vencimento': pend['data_referencia'],
             'data_prevista': data_prevista,
             'semaforo': _semaforo(data_prevista, hoje),
             'perfil': perfil,

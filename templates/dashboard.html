@@ -182,6 +182,7 @@
                                     <tr>
                                         <th class="ps-4">Cliente / Pet</th>
                                         <th>Valor</th>
+                                        <th>Vencimento</th>
                                         <th>Previsão de Pagamento</th>
                                         <th class="pe-4">Perfil</th>
                                     </tr>
@@ -194,6 +195,7 @@
                                             <div class="small text-muted">Pet: {{ item.pet_nome }}</div>
                                         </td>
                                         <td>R$ {{ formata_brl(item.valor) }}</td>
+                                        <td class="text-muted">{{ item.data_vencimento.strftime('%d/%m/%Y') }}</td>
                                         <td>
                                             {% set dias = (item.data_prevista - hoje).days %}
                                             {% if item.semaforo == 'vermelho' %}
@@ -218,7 +220,7 @@
                                     </tr>
                                     {% else %}
                                     <tr>
-                                        <td colspan="4" class="text-center py-4 text-muted">Nenhuma pendência prevista para esse mês. 🎉</td>
+                                        <td colspan="5" class="text-center py-4 text-muted">Nenhuma pendência prevista para esse mês. 🎉</td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>
