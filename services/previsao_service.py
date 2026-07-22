@@ -129,7 +129,7 @@ def _coletar_pendencias():
     """
     pendencias = []
 
-    pacotes = Pacote.query.filter(
+    pacotes = Pacote.query.options(db.joinedload(Pacote.cliente)).filter(
         Pacote.status_pagamento == StatusPagamento.PENDENTE.value,
         Pacote.data_vencimento.isnot(None),
     ).all()
@@ -142,7 +142,7 @@ def _coletar_pendencias():
             'data_referencia': p.data_vencimento,
         })
 
-    atendimentos = Atendimento.query.filter(
+    atendimentos = Atendimento.query.options(db.joinedload(Atendimento.cliente)).filter(
         Atendimento.status_pagamento == StatusPagamento.PENDENTE.value,
         Atendimento.pacote_id.is_(None),
     ).all()
