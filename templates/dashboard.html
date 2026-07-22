@@ -198,12 +198,13 @@
                                         <td class="text-muted">{{ item.data_vencimento.strftime('%d/%m/%Y') }}</td>
                                         <td>
                                             {% set dias = (item.data_prevista - hoje).days %}
+                                            {% set data_curta = item.data_prevista.strftime('%d/%m') %}
                                             {% if item.semaforo == 'vermelho' %}
-                                                <span class="badge bg-danger-subtle text-danger rounded-pill px-2">🔴 {{ -dias }} dia(s) atrasado</span>
+                                                <span class="badge bg-danger-subtle text-danger rounded-pill px-2">🔴 {{ data_curta }} {{ -dias }} dia(s) atrasado</span>
                                             {% elif item.semaforo == 'amarelo' %}
-                                                <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill px-2">🟡 {% if dias == 0 %}hoje{% else %}em {{ dias }} dia(s){% endif %}</span>
+                                                <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill px-2">🟡 {{ data_curta }} {% if dias == 0 %}hoje{% else %}em {{ dias }} dia(s){% endif %}</span>
                                             {% else %}
-                                                <span class="badge bg-success-subtle text-success rounded-pill px-2">🟢 em {{ dias }} dia(s)</span>
+                                                <span class="badge bg-success-subtle text-success rounded-pill px-2">🟢 {{ data_curta }} em {{ dias }} dia(s)</span>
                                             {% endif %}
                                         </td>
                                         <td class="pe-4">
