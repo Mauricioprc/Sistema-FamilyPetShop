@@ -83,8 +83,7 @@ def parse_preco(valor_str: str) -> float:
             limpo = limpo.replace('.', '').replace(',', '.')
         # Se só tem ponto (50.00 ou 1250.50), mantém como está
 
-        resultado = float(limpo) if limpo else 0.0
-        return max(0.0, resultado)
+        return float(limpo) if limpo else 0.0
     except (ValueError, AttributeError) as e:
         logger.warning(f"Erro ao fazer parse de preco '{valor_str}': {e}")
         return 0.0

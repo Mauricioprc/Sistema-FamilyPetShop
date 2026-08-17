@@ -70,7 +70,33 @@ def listar():
         else_=1
     )
 
-    pagination = q.order_by(cadastro_incompleto, Cliente.nome_tutor).paginate(page=page, per_page=12, error_out=False)
+    # Subquery com o total de dívida (10+ dias de atraso) de cada cliente,
+    # para ordenar a listagem sempre pelos que mais devem primeiro.
+    divida_atend_sub = db.session.query(
+        Atendimento.cliente_id.label('cliente_id'),
+        func.sum(Atendimento.preco).label('total')
+    ).filter(
+        Atendimento.status_pagamento == 'Pendente',
+        Atendimento.status_presenca == 'Presente',
+        Atendimento.data <= limite_atraso
+    ).group_by(Atendimento.cliente_id).subquery()
+
+    divida_pacot_sub = db.session.query(
+        Pacote.cliente_id.label('cliente_id'),
+        func.sum(Pacote.preco_pacote).label('total')
+    ).filter(
+        Pacote.status_pagamento == 'Pendente',
+        Pacote.data_vencimento <= limite_atraso
+    ).group_by(Pacote.cliente_id).subquery()
+
+    divida_total_expr = (
+        func.coalesce(divida_atend_sub.c.total, 0) + func.coalesce(divida_pacot_sub.c.total, 0)
+    )
+
+    q = q.outerjoin(divida_atend_sub, divida_atend_sub.c.cliente_id == Cliente.id) \
+         .outerjoin(divida_pacot_sub, divida_pacot_sub.c.cliente_id == Cliente.id)
+
+    pagination = q.order_by(divida_total_expr.desc(), cadastro_incompleto, Cliente.nome_tutor).paginate(page=page, per_page=12, error_out=False)
 
     # Dados extras para os cards, calculados em lote (evita N+1 queries no loop)
     cliente_ids = [c.id for c in pagination.items]

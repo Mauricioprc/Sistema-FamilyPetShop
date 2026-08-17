@@ -32,10 +32,17 @@ def agenda_do_dia():
         Atendimento.status_presenca == StatusAtendimento.AGENDADO.value
     ).order_by(Atendimento.id).all()
 
+    hoje = date.today()
+    atendimentos_atrasados = Atendimento.query.filter(
+        Atendimento.data < hoje,
+        Atendimento.status_presenca == StatusAtendimento.AGENDADO.value
+    ).order_by(Atendimento.data).all()
+
     return render_template('agenda.html',
                            atendimentos=atendimentos,
+                           atendimentos_atrasados=atendimentos_atrasados,
                            data_selecionada=data_sel,
-                           hoje=date.today(),
+                           hoje=hoje,
                            dia_anterior=data_sel - timedelta(days=1),
                            proximo_dia=data_sel + timedelta(days=1))
 
@@ -140,7 +147,7 @@ def editar(atendimento_id):
     if not atendimento.pacote_id:
         atendimento.nome_servico = request.form.get('nome_servico', atendimento.nome_servico)
         preco_str = request.form.get('preco', '0')
-        atendimento.preco = parse_preco(preco_str)
+        atendimento.preco = max(0.0, parse_preco(preco_str))
 
     db.session.commit()
     flash('Atendimento atualizado!', 'success')

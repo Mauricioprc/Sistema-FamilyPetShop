@@ -1,11 +1,15 @@
 import calendar
-from datetime import date, timedelta
-from flask import Blueprint, render_template, request
+from datetime import date, datetime, timedelta
+from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required
 from sqlalchemy import func
 from extensions import db
 from models import Atendimento, Pacote, Despesa
-from services.previsao_service import gerar_previsao_recebimento, listar_vencendo_no_mes
+from services.previsao_service import (
+    gerar_previsao_recebimento,
+    listar_vencendo_no_mes,
+    definir_previsao_manual,
+)
 
 dashboard_bp = Blueprint('dashboard', __name__)
 
@@ -144,3 +148,27 @@ def dashboard():
                            previsao=previsao,
                            vencendo_itens=vencendo_itens,
                            formata_brl=formata_brl)
+
+
+@dashboard_bp.route('/dashboard/previsao/editar', methods=['POST'])
+@login_required
+def editar_previsao():
+    tipo = request.form.get('tipo')
+    item_id = request.form.get('item_id', type=int)
+    nova_data_str = request.form.get('nova_data_prevista', '').strip()
+
+    nova_data = None
+    if nova_data_str:
+        try:
+            nova_data = datetime.strptime(nova_data_str, '%Y-%m-%d').date()
+        except ValueError:
+            flash('Data invalida.', 'danger')
+            return redirect(request.referrer or url_for('dashboard.dashboard'))
+
+    if not tipo or not item_id:
+        flash('Pendencia invalida.', 'danger')
+        return redirect(request.referrer or url_for('dashboard.dashboard'))
+
+    sucesso, msg = definir_previsao_manual(tipo, item_id, nova_data)
+    flash(msg, 'success' if sucesso else 'danger')
+    return redirect(request.referrer or url_for('dashboard.dashboard'))

@@ -195,7 +195,7 @@ def nova_despesa():
             nova = Despesa(
                 tipo=request.form['tipo'],
                 descricao=request.form['descricao'],
-                valor=parse_preco(request.form.get('valor', '0')),
+                valor=max(0.0, parse_preco(request.form.get('valor', '0'))),
                 data=datetime.strptime(request.form['data'], '%Y-%m-%d').date()
             )
             db.session.add(nova)
@@ -214,7 +214,7 @@ def editar_despesa(despesa_id):
     if request.method == 'POST':
         despesa.tipo = request.form['tipo']
         despesa.descricao = request.form['descricao']
-        despesa.valor = parse_preco(request.form.get('valor', '0'))
+        despesa.valor = max(0.0, parse_preco(request.form.get('valor', '0')))
         try:
             despesa.data = datetime.strptime(request.form['data'], '%Y-%m-%d').date()
             db.session.commit()

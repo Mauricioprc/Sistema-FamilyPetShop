@@ -74,7 +74,7 @@ def solicitar_agendamento():
         novo = Atendimento(
             data=data_obj,
             nome_servico=request.form.get('nome_servico', ''),
-            preco=parse_preco(request.form.get('preco', '0.00')),
+            preco=max(0.0, parse_preco(request.form.get('preco', '0.00'))),
             observacao=request.form.get('observacao'),
             adicionais=adicionais,
             status_pagamento=StatusPagamento.PENDENTE.value,
@@ -179,7 +179,7 @@ def confirmar_solicitacao(atendimento_id):
         atendimento.observacao = f"Observação Cliente: {atendimento.observacao}\n---\nNota PetShop: {obs_nova}"
     
     atendimento.status_presenca = StatusAtendimento.AGENDADO.value
-    atendimento.preco = parse_preco(request.form.get('preco', '0'))
+    atendimento.preco = max(0.0, parse_preco(request.form.get('preco', '0')))
     db.session.commit()
 
     tutor = atendimento.cliente.nome_tutor
