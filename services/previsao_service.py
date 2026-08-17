@@ -135,11 +135,14 @@ def _coletar_pendencias():
     ).all()
     for p in pacotes:
         pendencias.append({
+            'tipo': 'pacote',
+            'id': p.id,
             'cliente_id': p.cliente_id,
             'cliente_nome': p.cliente.nome_tutor,
             'pet_nome': p.cliente.nome_pet,
             'valor': p.preco_pacote,
             'data_referencia': p.data_vencimento,
+            'data_prevista_manual': p.data_prevista_pagamento,
         })
 
     atendimentos = Atendimento.query.options(db.joinedload(Atendimento.cliente)).filter(
@@ -148,11 +151,14 @@ def _coletar_pendencias():
     ).all()
     for a in atendimentos:
         pendencias.append({
+            'tipo': 'atendimento',
+            'id': a.id,
             'cliente_id': a.cliente_id,
             'cliente_nome': a.cliente.nome_tutor,
             'pet_nome': a.cliente.nome_pet,
             'valor': a.preco,
             'data_referencia': a.data,
+            'data_prevista_manual': a.data_prevista_pagamento,
         })
 
     return pendencias
@@ -183,7 +189,11 @@ def gerar_previsao_recebimento(mes: int, ano: int) -> dict:
     for pend in pendencias:
         perfil, atraso = _perfil_e_atraso_do_cliente(pend['cliente_id'], perfis, fallback_geral)
 
-        if atraso is None:
+        if pend['data_prevista_manual'] is not None:
+            # O usuario ajustou manualmente a data prevista para esta
+            # pendencia; isso tem prioridade sobre o calculo automatico.
+            data_prevista = pend['data_prevista_manual']
+        elif atraso is None:
             data_prevista = pend['data_referencia']
         else:
             data_prevista = pend['data_referencia'] + timedelta(days=round(atraso))
@@ -195,11 +205,14 @@ def gerar_previsao_recebimento(mes: int, ano: int) -> dict:
             total_vencimento_nominal += pend['valor']
 
         itens.append({
+            'tipo': pend['tipo'],
+            'id': pend['id'],
             'cliente_nome': pend['cliente_nome'],
             'pet_nome': pend['pet_nome'],
             'valor': pend['valor'],
             'data_vencimento': pend['data_referencia'],
             'data_prevista': data_prevista,
+            'previsao_ajustada_manualmente': pend['data_prevista_manual'] is not None,
             'semaforo': _semaforo(data_prevista, hoje),
             'perfil': perfil,
         })
@@ -213,6 +226,27 @@ def gerar_previsao_recebimento(mes: int, ano: int) -> dict:
         'tem_dado_suficiente': fallback_geral is not None,
         'itens': itens_do_mes,
     }
+
+
+def definir_previsao_manual(tipo: str, item_id: int, nova_data: date | None) -> tuple[bool, str]:
+    """
+    Define (ou limpa, se nova_data for None) a data prevista de pagamento
+    ajustada manualmente pelo usuario para um pacote ou atendimento avulso.
+    Retorna (sucesso, mensagem).
+    """
+    if tipo == 'pacote':
+        item = Pacote.query.get(item_id)
+    elif tipo == 'atendimento':
+        item = Atendimento.query.get(item_id)
+    else:
+        return False, 'Tipo de pendencia invalido.'
+
+    if not item:
+        return False, 'Pendencia nao encontrada.'
+
+    item.data_prevista_pagamento = nova_data
+    db.session.commit()
+    return True, 'Previsao de pagamento atualizada!'
 
 
 def listar_vencendo_no_mes(mes: int, ano: int) -> list:

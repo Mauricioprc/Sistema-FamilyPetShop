@@ -176,6 +176,11 @@
                             <div class="text-muted mt-1">Pela data de vencimento seriam R$ {{ formata_brl(previsao.total_vencimento_nominal) }}</div>
                         </div>
 
+                        <div class="alert alert-info rounded-4 mb-3">
+                            <i class="bi bi-pencil-square me-2"></i>
+                            A <strong>Previsão de Pagamento</strong> é só uma estimativa. Se você já sabe (ou combinou com o cliente) uma data diferente, clique na data na tabela abaixo e ajuste — a previsão desse item passa a usar a data que você escolher.
+                        </div>
+
                         <div class="table-responsive">
                             <table class="table table-hover align-middle mb-0">
                                 <thead class="bg-light text-secondary small">
@@ -199,13 +204,31 @@
                                         <td>
                                             {% set dias = (item.data_prevista - hoje).days %}
                                             {% set data_curta = item.data_prevista.strftime('%d/%m') %}
-                                            {% if item.semaforo == 'vermelho' %}
-                                                <span class="badge bg-danger-subtle text-danger rounded-pill px-2">🔴 {{ data_curta }} {{ -dias }} dia(s) atrasado</span>
-                                            {% elif item.semaforo == 'amarelo' %}
-                                                <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill px-2">🟡 {{ data_curta }} {% if dias == 0 %}hoje{% else %}em {{ dias }} dia(s){% endif %}</span>
-                                            {% else %}
-                                                <span class="badge bg-success-subtle text-success rounded-pill px-2">🟢 {{ data_curta }} em {{ dias }} dia(s)</span>
-                                            {% endif %}
+                                            {% set badge_id = 'previsao-badge-' ~ item.tipo ~ '-' ~ item.id %}
+                                            {% set form_id = 'previsao-form-' ~ item.tipo ~ '-' ~ item.id %}
+                                            <span id="{{ badge_id }}" role="button" tabindex="0"
+                                                  title="Clique para ajustar a data prevista manualmente"
+                                                  onclick="document.getElementById('{{ badge_id }}').classList.add('d-none'); document.getElementById('{{ form_id }}').classList.remove('d-none');">
+                                                {% if item.semaforo == 'vermelho' %}
+                                                    <span class="badge bg-danger-subtle text-danger rounded-pill px-2">🔴 {{ data_curta }} {{ -dias }} dia(s) atrasado</span>
+                                                {% elif item.semaforo == 'amarelo' %}
+                                                    <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill px-2">🟡 {{ data_curta }} {% if dias == 0 %}hoje{% else %}em {{ dias }} dia(s){% endif %}</span>
+                                                {% else %}
+                                                    <span class="badge bg-success-subtle text-success rounded-pill px-2">🟢 {{ data_curta }} em {{ dias }} dia(s)</span>
+                                                {% endif %}
+                                                {% if item.previsao_ajustada_manualmente %}
+                                                    <i class="bi bi-pencil-fill text-muted small ms-1" title="Data ajustada manualmente"></i>
+                                                {% else %}
+                                                    <i class="bi bi-pencil text-muted small ms-1"></i>
+                                                {% endif %}
+                                            </span>
+                                            <form id="{{ form_id }}" method="POST" action="{{ url_for('dashboard.editar_previsao') }}" class="d-none d-flex align-items-center gap-1">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <input type="hidden" name="tipo" value="{{ item.tipo }}">
+                                                <input type="hidden" name="item_id" value="{{ item.id }}">
+                                                <input type="date" name="nova_data_prevista" class="form-control form-control-sm" value="{{ item.data_prevista.isoformat() }}" style="width: auto;">
+                                                <button type="submit" class="btn btn-sm btn-primary-custom" title="Salvar"><i class="bi bi-check-lg"></i></button>
+                                            </form>
                                         </td>
                                         <td class="pe-4">
                                             {% if item.perfil == 'pontual' %}

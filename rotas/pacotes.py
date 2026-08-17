@@ -170,7 +170,7 @@ def editar(pacote_id):
     pacote = db.get_or_404(Pacote, pacote_id)
     
     pacote.nome_servico = request.form.get('nome_servico', pacote.nome_servico)
-    pacote.preco_pacote = parse_preco(request.form.get('preco_pacote', str(pacote.preco_pacote)))
+    pacote.preco_pacote = max(0.0, parse_preco(request.form.get('preco_pacote', str(pacote.preco_pacote))))
 
     try:
         # Evita erro se o campo vier vazio ou com texto inválido

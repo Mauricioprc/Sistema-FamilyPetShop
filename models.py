@@ -114,6 +114,7 @@ class Pacote(db.Model):
     data_pagamento = db.Column(db.Date, nullable=True)
     data_vencimento = db.Column(db.Date, nullable=True)
     vencimento_customizado = db.Column(db.Boolean, default=False, nullable=False)
+    data_prevista_pagamento = db.Column(db.Date, nullable=True)
     metodo_pagamento = db.Column(db.String(50), nullable=True)
     dia_semana_fixo = db.Column(db.Integer, nullable=True)
     tipo_agendamento = db.Column(db.String(20), nullable=True)
@@ -147,6 +148,7 @@ class Atendimento(db.Model):
     status_pagamento = db.Column(db.String(50), default=StatusPagamento.PENDENTE.value,
                                  nullable=False, index=True)
     data_pagamento = db.Column(db.Date, nullable=True)
+    data_prevista_pagamento = db.Column(db.Date, nullable=True)
     metodo_pagamento = db.Column(db.String(50), nullable=True)
     status_presenca = db.Column(db.String(50), default=StatusAtendimento.AGENDADO.value,
                                 nullable=False, index=True)

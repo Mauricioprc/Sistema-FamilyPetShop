@@ -16,6 +16,23 @@
     <a href="{{ url_for('agenda.novo') }}" class="btn btn-primary-custom btn-lg"><i class="bi bi-plus-circle-fill"></i> Novo Agendamento</a>
   </div>
 
+  {% if atendimentos_atrasados %}
+    <div class="alert alert-warning">
+      <h5 class="alert-heading"><i class="bi bi-exclamation-triangle-fill"></i> Serviços com data anterior à de hoje</h5>
+      <p class="mb-2">Os agendamentos abaixo continuam com status "Agendado", mas a data já passou:</p>
+      <ul class="mb-0">
+        {% for atendimento in atendimentos_atrasados %}
+          <li>
+            <strong>{{ atendimento.data.strftime('%d/%m/%Y') }}</strong>
+            — {{ atendimento.cliente.nome_tutor }} ({{ atendimento.cliente.nome_pet }})
+            — {{ atendimento.nome_servico }}
+            <a href="{{ url_for('agenda.agenda_do_dia', data=atendimento.data.isoformat()) }}" class="ms-1">ver dia</a>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+
   <div class="row">
     {% for atendimento in atendimentos %}
       <div class="col-lg-4 col-md-6 mb-4" id="card-atendimento-{{ atendimento.id }}">
