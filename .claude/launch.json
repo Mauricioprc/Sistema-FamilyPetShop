@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "petshop-flask",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "set PYTHONIOENCODING=utf-8 && python app.py"],
+      "port": 5000
+    }
+  ]
+}

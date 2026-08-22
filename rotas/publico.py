@@ -1,9 +1,9 @@
 from datetime import datetime
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app
 from flask_login import login_required
 from extensions import db, limiter
 from models import Atendimento, Cliente, Avaliacao, StatusAtendimento, StatusPagamento
-from utils import parse_preco, salvar_imagem, formatar_telefone_whatsapp
+from utils import parse_preco, salvar_imagem, formatar_telefone_whatsapp, verificar_turnstile
 from config import Config
 from rotas.whatsapp import _montar_url  # ✅ usa a mesma codificação (quote) da API centralizada
 
@@ -18,6 +18,13 @@ LIMITE_PUBLICO = "10 per minute"
 @limiter.limit(LIMITE_PUBLICO)
 def solicitar_agendamento():
     if request.method == 'POST':
+        token = request.form.get('cf-turnstile-response', '')
+        if not verificar_turnstile(
+            current_app.config.get('TURNSTILE_SECRET_KEY'), token, request.remote_addr
+        ):
+            flash('Verificacao de seguranca falhou. Marque "Nao sou um robo" e tente novamente.', 'danger')
+            return redirect(url_for('publico.solicitar_agendamento'))
+
         data_str = request.form.get('data', '')
         if not data_str:
             flash('Data e obrigatoria.', 'danger')
@@ -90,7 +97,10 @@ def solicitar_agendamento():
         flash('Solicitacao enviada! Entraremos em contato para confirmar.', 'success')
         return redirect(url_for('publico.confirmacao'))
 
-    return render_template('solicitar_agendamento.html')
+    return render_template(
+        'solicitar_agendamento.html',
+        turnstile_site_key=current_app.config.get('TURNSTILE_SITE_KEY')
+    )
 
 
 @publico_bp.route('/confirmacao_agendamento')
@@ -103,12 +113,23 @@ def links_insta():
     # CORRIGIDO: Avaliacao.data agora existe no model
     avaliacoes = Avaliacao.query.filter_by(aprovada=True).order_by(
         Avaliacao.data.desc()).limit(3).all()
-    return render_template('links_insta.html', avaliacoes=avaliacoes)
+    return render_template(
+        'links_insta.html',
+        avaliacoes=avaliacoes,
+        turnstile_site_key=current_app.config.get('TURNSTILE_SITE_KEY')
+    )
 
 
 @publico_bp.route('/submeter_avaliacao', methods=['POST'])
 @limiter.limit(LIMITE_PUBLICO)
 def submeter_avaliacao():
+    token = request.form.get('cf-turnstile-response', '')
+    if not verificar_turnstile(
+        current_app.config.get('TURNSTILE_SECRET_KEY'), token, request.remote_addr
+    ):
+        flash('Verificacao de seguranca falhou. Marque "Nao sou um robo" e tente novamente.', 'error')
+        return redirect(url_for('publico.links_insta'))
+
     try:
         nome_cliente = request.form.get('nome_cliente', '').strip()
         avaliacao_texto = request.form.get('avaliacao_texto', '').strip()
@@ -131,23 +152,53 @@ def submeter_avaliacao():
         )
 
         # CORRIGIDO: usar datetime.utcnow() para o campo 'data'
+        # SEGURANCA: aprovada=False — avaliacao so aparece no mural publico
+        # depois de revisada por um administrador em /avaliacoes/pendentes.
         nova = Avaliacao(
             nome_cliente=nome_cliente,
             nome_pet=request.form.get('nome_pet', '').strip() or None,
             avaliacao_texto=avaliacao_texto,
             nota=nota,
             imagem_pet=filename,
-            aprovada=True,
+            aprovada=False,
             data=datetime.utcnow()
         )
         db.session.add(nova)
         db.session.commit()
-        flash('Obrigado! A foto do seu pet vai ficar linda no mural.', 'success')
+        flash('Obrigado! Sua avaliacao foi enviada e vai aparecer no mural apos revisao.', 'success')
     except Exception:
         db.session.rollback()
         flash('Ocorreu um erro ao enviar. Tente novamente.', 'error')
 
     return redirect(url_for('publico.links_insta'))
+
+
+# --- Moderacao de avaliacoes (ADMIN) ---
+
+@publico_bp.route('/avaliacoes/pendentes')
+@login_required
+def avaliacoes_pendentes():
+    pendentes = Avaliacao.query.filter_by(aprovada=False).order_by(
+        Avaliacao.data.desc()).all()
+    return render_template('avaliacoes_pendentes.html', avaliacoes=pendentes)
+
+
+@publico_bp.route('/avaliacoes/<int:avaliacao_id>/aprovar', methods=['POST'])
+@login_required
+def aprovar_avaliacao(avaliacao_id):
+    avaliacao = db.get_or_404(Avaliacao, avaliacao_id)
+    avaliacao.aprovada = True
+    db.session.commit()
+    return jsonify({'success': True})
+
+
+@publico_bp.route('/avaliacoes/<int:avaliacao_id>/recusar', methods=['POST'])
+@login_required
+def recusar_avaliacao(avaliacao_id):
+    avaliacao = db.get_or_404(Avaliacao, avaliacao_id)
+    db.session.delete(avaliacao)
+    db.session.commit()
+    return jsonify({'success': True})
 
 
 # --- Rotas ADMINISTRATIVAS ---

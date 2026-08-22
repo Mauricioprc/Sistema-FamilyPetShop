@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% block title %}Avaliações Pendentes — Family Pet Shop{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h1 class="fw-bold text-brand-blue mb-1">Avaliações Pendentes</h1>
+            <p class="text-muted mb-0">Revise antes de publicar no mural público (/insta).</p>
+        </div>
+        <a href="{{ url_for('publico.links_insta') }}" target="_blank" class="btn btn-outline-primary-custom border-2 fw-bold">
+            <i class="bi bi-box-arrow-up-right me-2"></i> Ver Mural Público
+        </a>
+    </div>
+
+    <div class="row g-4">
+        {% for av in avaliacoes %}
+        <div class="col-12 col-md-6 col-xl-4" id="card-avaliacao-{{ av.id }}">
+            <div class="card h-100 card-solicitacao shadow-sm border-0">
+                <div class="card-body p-4 d-flex flex-column">
+                    {% if av.imagem_pet %}
+                    <img src="{{ url_for('static', filename='uploads/' ~ av.imagem_pet) }}"
+                         alt="Foto enviada" class="rounded-3 mb-3" style="width:100%;height:180px;object-fit:cover;">
+                    {% endif %}
+
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <h5 class="fw-bold mb-0 text-brand-blue">{{ av.nome_cliente }}</h5>
+                            {% if av.nome_pet %}<span class="text-muted small"><i class="bi bi-heart"></i> {{ av.nome_pet }}</span>{% endif %}
+                        </div>
+                        <span class="fw-bold text-warning">
+                            {% for _ in range(av.nota) %}<i class="bi bi-star-fill"></i>{% endfor %}
+                        </span>
+                    </div>
+
+                    <p class="flex-grow-1 fst-italic">"{{ av.avaliacao_texto }}"</p>
+
+                    <small class="text-muted mb-3">Enviado em {{ av.data.strftime('%d/%m/%Y %H:%M') }}</small>
+
+                    <div class="d-flex gap-2 mt-2">
+                        <button class="btn btn-success flex-grow-1 fw-bold py-2 shadow-sm btn-aprovar-acao"
+                                data-url="{{ url_for('publico.aprovar_avaliacao', avaliacao_id=av.id) }}">
+                            <i class="bi bi-check-lg"></i> Aprovar
+                        </button>
+                        <button class="btn btn-outline-danger px-3 btn-recusar-avaliacao"
+                                data-url="{{ url_for('publico.recusar_avaliacao', avaliacao_id=av.id) }}">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12 text-center py-5">
+            <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+            <p class="text-muted mt-2">Nenhuma avaliação pendente.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  function removerCard(id) {
+    document.getElementById('card-avaliacao-' + id)?.remove();
+    const restantes = document.querySelectorAll('[id^="card-avaliacao-"]');
+    if (restantes.length === 0) {
+      const row = document.querySelector('.row.g-4');
+      if (row) {
+        row.innerHTML = `
+          <div class="col-12 text-center py-5">
+            <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+            <p class="text-muted mt-2">Nenhuma avaliação pendente.</p>
+          </div>`;
+      }
+    }
+  }
+
+  async function acionar(btn, msgSucesso) {
+    const id = btn.dataset.url.match(/(\d+)/)?.[1];
+    btn.disabled = true;
+    try {
+      const res = await fetch(btn.dataset.url, { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        mostrarAjaxAlert('success', msgSucesso);
+        if (id) removerCard(id);
+      } else {
+        mostrarAjaxAlert('danger', 'Erro ao processar.');
+        btn.disabled = false;
+      }
+    } catch (err) {
+      mostrarAjaxAlert('danger', 'Erro na comunicação com o servidor.');
+      btn.disabled = false;
+    }
+  }
+
+  document.querySelectorAll('.btn-aprovar-acao').forEach(btn => {
+    btn.addEventListener('click', () => acionar(btn, 'Avaliação publicada no mural!'));
+  });
+
+  document.querySelectorAll('.btn-recusar-avaliacao').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (confirm('Descartar esta avaliação? Essa ação não pode ser desfeita.')) {
+        acionar(btn, 'Avaliação descartada.');
+      }
+    });
+  });
+});
+</script>
+{% endblock %}

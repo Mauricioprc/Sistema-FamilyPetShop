@@ -3,6 +3,7 @@ import locale
 import os
 import uuid
 import logging
+import requests
 from datetime import timedelta, date, datetime
 from werkzeug.utils import secure_filename
 from typing import Optional, Set
@@ -145,22 +146,26 @@ def validar_imagem(file, max_size_mb: int = 5) -> Optional[str]:
     # Verificar magic bytes (tipo MIME real)
     magic_bytes = file.read(32)
     file.seek(0)
-    
+
     # Definir assinaturas conhecidas
     assinaturas = {
         b'\xFF\xD8\xFF': 'jpg',      # JPEG
         b'\x89PNG\r\n': 'png',        # PNG
         b'GIF87a': 'gif',             # GIF87a
         b'GIF89a': 'gif',             # GIF89a
-        b'RIFF': 'webp',              # WEBP (simplificado)
     }
-    
+
     tipo_detectado = None
     for assinatura, tipo in assinaturas.items():
         if magic_bytes.startswith(assinatura):
             tipo_detectado = tipo
             break
-    
+
+    # WEBP: container RIFF (bytes 0-4) + marcador "WEBP" nos bytes 8-12.
+    # Checar só o "RIFF" aceitaria qualquer arquivo RIFF (WAV, AVI, etc.)
+    if not tipo_detectado and magic_bytes[:4] == b'RIFF' and magic_bytes[8:12] == b'WEBP':
+        tipo_detectado = 'webp'
+
     if not tipo_detectado:
         logger.warning(f"Tipo MIME não validado para arquivo: {file.filename}")
         return "Tipo de arquivo não reconhecido como imagem válida."
@@ -211,6 +216,55 @@ def salvar_imagem(file, upload_folder: str, allowed_extensions: Set[str]) -> Opt
     except Exception as e:
         logger.error(f"Erro ao salvar imagem: {e}")
         return None
+
+
+# ============================================
+# CLOUDFLARE TURNSTILE (CAPTCHA)
+# ============================================
+
+TURNSTILE_VERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify'
+
+
+def verificar_turnstile(secret_key: Optional[str], token: str, remote_ip: Optional[str] = None) -> bool:
+    """
+    Valida o token do Cloudflare Turnstile enviado pelo formulário publico.
+
+    Args:
+        secret_key: TURNSTILE_SECRET_KEY configurada no .env
+        token: valor do campo 'cf-turnstile-response' enviado pelo form
+        remote_ip: IP do cliente (opcional, aumenta a precisao da validacao)
+
+    Returns:
+        True se o token for valido. Se a chave secreta nao estiver
+        configurada, o captcha e considerado desativado e a funcao
+        retorna False (falha fechada) para nao deixar os formularios
+        publicos sem protecao por engano em producao.
+    """
+    if not secret_key:
+        logger.warning(
+            'TURNSTILE_SECRET_KEY nao configurada — captcha desativado, '
+            'requisicao bloqueada por seguranca.'
+        )
+        return False
+
+    if not token:
+        return False
+
+    payload = {'secret': secret_key, 'response': token}
+    if remote_ip:
+        payload['remoteip'] = remote_ip
+
+    try:
+        resp = requests.post(TURNSTILE_VERIFY_URL, data=payload, timeout=5)
+        resp.raise_for_status()
+        resultado = resp.json()
+        if not resultado.get('success'):
+            logger.warning(f"Turnstile rejeitou o token: {resultado.get('error-codes')}")
+        return bool(resultado.get('success'))
+    except requests.RequestException as e:
+        logger.error(f'Erro ao verificar Turnstile: {e}')
+        # Falha de rede com o Cloudflare: falha fechada (nao deixa passar).
+        return False
 
 
 # ============================================

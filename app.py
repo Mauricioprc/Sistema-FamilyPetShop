@@ -70,7 +70,7 @@ def create_app(config_name='development'):
         migrate.init_app(app, db)
         login_manager.init_app(app)
         csrf.init_app(app)
-        #limiter.init_app(app)
+        limiter.init_app(app)
         app.logger.info('Extensoes inicializadas com sucesso')
     except Exception as e:
         app.logger.error(f'Erro ao inicializar extensoes: {e}')
@@ -139,10 +139,11 @@ def _registrar_context_processors(app):
     """Registra processadores de contexto globais"""
     @app.context_processor
     def inject_globals():
-        from models import Atendimento
+        from models import Atendimento, Avaliacao
         from flask_login import current_user
 
         num_solicitacoes = 0
+        num_avaliacoes_pendentes = 0
         if current_user.is_authenticated:
             try:
                 num_solicitacoes = Atendimento.query.filter_by(
@@ -150,8 +151,17 @@ def _registrar_context_processors(app):
                 ).count()
             except Exception as e:
                 app.logger.error(f'Erro ao contar solicitacoes: {e}')
+            try:
+                num_avaliacoes_pendentes = Avaliacao.query.filter_by(
+                    aprovada=False
+                ).count()
+            except Exception as e:
+                app.logger.error(f'Erro ao contar avaliacoes pendentes: {e}')
 
-        return dict(num_solicitacoes=num_solicitacoes)
+        return dict(
+            num_solicitacoes=num_solicitacoes,
+            num_avaliacoes_pendentes=num_avaliacoes_pendentes
+        )
 
 
 def _registrar_error_handlers(app):

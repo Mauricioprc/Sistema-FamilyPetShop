@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import UserMixin, login_user, logout_user, login_required
 from werkzeug.security import check_password_hash
 from urllib.parse import urlparse
-from extensions import login_manager
+from extensions import login_manager, limiter
 import logging
 
 logger = logging.getLogger(__name__)
@@ -50,6 +50,7 @@ def unauthorized():
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
+@limiter.limit("5 per minute")
 def login():
     if request.method == 'POST':
         username = request.form.get('username', '').strip()

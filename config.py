@@ -55,6 +55,10 @@ class Config:
     LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')
     ITEMS_PER_PAGE = 10
 
+    # Cloudflare Turnstile (CAPTCHA dos formularios publicos)
+    TURNSTILE_SITE_KEY = os.environ.get('TURNSTILE_SITE_KEY', '')
+    TURNSTILE_SECRET_KEY = os.environ.get('TURNSTILE_SECRET_KEY', '')
+
 
 class DevelopmentConfig(Config):
     DEBUG = True
@@ -67,6 +71,9 @@ class TestingConfig(Config):
     SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
     SESSION_COOKIE_SECURE = False
     WTF_CSRF_ENABLED = False
+    # Testes automatizados não têm como resolver um captcha real do Cloudflare.
+    TURNSTILE_SITE_KEY = '1x00000000000000000000AA'  # chave de teste sempre-passa da Cloudflare
+    TURNSTILE_SECRET_KEY = '1x0000000000000000000000000000000AA'
 
 
 class ProductionConfig(Config):

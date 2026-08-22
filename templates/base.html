@@ -69,6 +69,19 @@
             </ul>
           </li>
         </ul>
+
+        {% if num_avaliacoes_pendentes > 0 %}
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'publico.avaliacoes_pendentes' %}active{% endif %}"
+               href="{{ url_for('publico.avaliacoes_pendentes') }}"
+               title="Avaliações aguardando revisão">
+              <i class="bi bi-star-fill text-warning"></i>
+              <span class="badge rounded-pill bg-danger ms-1">{{ num_avaliacoes_pendentes }}</span>
+            </a>
+          </li>
+        </ul>
+        {% endif %}
       </div>
     </div>
   </nav>
