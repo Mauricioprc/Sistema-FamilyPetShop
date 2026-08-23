@@ -37,15 +37,22 @@ load_dotenv()
 # Permite "import utils" mesmo rodando como script solto (python scripts/backup.py)
 BASE_DIR = Path(__file__).parent.parent
 sys.path.insert(0, str(BASE_DIR))
-from utils import enviar_backup_para_drive  # noqa: E402
+from utils import enviar_backup_para_drive, resolver_service_account_file  # noqa: E402
 
-# Configuracoes
-DB_ORIGEM = BASE_DIR / 'instance' / 'petshop.db'
-BACKUP_DIR = BASE_DIR / 'instance' / 'backups'
+# Configuracoes — INSTANCE_DIR permite apontar pro disco persistente do
+# Render (ex: /var/data); sem a env var, cai no instance/ padrao do projeto.
+INSTANCE_DIR = Path(os.environ.get('INSTANCE_DIR', BASE_DIR / 'instance'))
+DB_ORIGEM = INSTANCE_DIR / 'petshop.db'
+BACKUP_DIR = INSTANCE_DIR / 'backups'
 MANTER_DIAS = 30  # quantos dias de backup manter
 
 # Caminho do arquivo JSON da Service Account (ex: instance/google-service-account.json)
-GOOGLE_SERVICE_ACCOUNT_FILE = os.environ.get('GOOGLE_SERVICE_ACCOUNT_FILE', '').strip()
+# ou, alternativamente, GOOGLE_SERVICE_ACCOUNT_JSON com o conteudo do JSON direto
+# (Render, sem arquivo persistido fora do disco).
+GOOGLE_SERVICE_ACCOUNT_FILE = resolver_service_account_file(
+    os.environ.get('GOOGLE_SERVICE_ACCOUNT_JSON', '').strip(),
+    os.environ.get('GOOGLE_SERVICE_ACCOUNT_FILE', '').strip()
+)
 # ID da pasta do Drive compartilhada com a Service Account (fica na URL da pasta)
 GOOGLE_DRIVE_FOLDER_ID = os.environ.get('GOOGLE_DRIVE_FOLDER_ID', '').strip()
 

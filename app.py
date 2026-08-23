@@ -6,7 +6,7 @@ from flask import Flask, app, redirect, url_for, render_template
 from flask_login import login_required
 from config import Config, config
 from extensions import db, migrate, login_manager, csrf, limiter
-from utils import configurar_locale, format_currency
+from utils import configurar_locale, format_currency, resolver_service_account_file
 from flask import current_app
 
 
@@ -53,7 +53,14 @@ def create_app(config_name='development'):
     Args:
         config_name: 'development', 'testing' ou 'production'
     """
-    app = Flask(__name__)
+    # INSTANCE_DIR (ex: disco persistente do Render em /var/data) precisa
+    # ser passado pro Flask() aqui, pois app.instance_path e' fixado na
+    # criacao do app — mudar so em config.py nao afeta current_app.instance_path,
+    # que e' usado em vários lugares (rotas/backup.py, logs, etc).
+    instance_path = os.environ.get('INSTANCE_DIR')
+    if instance_path:
+        instance_path = os.path.abspath(instance_path)
+    app = Flask(__name__, instance_path=instance_path)
 
     if config_name not in config:
         config_name = 'development'
@@ -61,6 +68,15 @@ def create_app(config_name='development'):
 
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
     os.makedirs(app.instance_path, exist_ok=True)
+
+    # Se GOOGLE_SERVICE_ACCOUNT_JSON estiver definida (Render, sem arquivo
+    # .json persistido), materializa um arquivo temporario e passa a usar
+    # esse caminho — mantem GOOGLE_SERVICE_ACCOUNT_FILE como a interface
+    # unica que o resto do codigo (rotas/backup.py) ja conhece.
+    app.config['GOOGLE_SERVICE_ACCOUNT_FILE'] = resolver_service_account_file(
+        app.config.get('GOOGLE_SERVICE_ACCOUNT_JSON'),
+        app.config.get('GOOGLE_SERVICE_ACCOUNT_FILE')
+    )
 
     setup_logging(app)
     app.logger.info(f'Aplicacao iniciada em modo: {config_name}')
@@ -102,13 +118,6 @@ def create_app(config_name='development'):
     _registrar_context_processors(app)
     _registrar_error_handlers(app)
     _registrar_rotas(app)
-
-    with app.app_context():
-        try:
-            db.create_all()
-            app.logger.info('Banco de dados criado/verificado')
-        except Exception as e:
-            app.logger.error(f'Erro ao criar banco de dados: {e}')
 
     return app
 

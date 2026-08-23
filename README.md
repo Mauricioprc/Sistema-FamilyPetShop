@@ -34,7 +34,21 @@ FLASK_ENV=development
 
 > ⚠️ **NUNCA** compartilhe o arquivo `.env` nem o inclua em ZIPs ou commits.
 
-### 3. Rodar a migration (apenas uma vez)
+### 3. Criar/atualizar as tabelas do banco
+
+O banco (`instance/petshop.db`) não é mais criado automaticamente ao subir
+o app — as tabelas são geridas via Flask-Migrate. Antes do primeiro uso (e
+sempre que houver uma migration nova), rode:
+
+```bash
+set FLASK_APP=wsgi.py   # Windows (cmd)
+$env:FLASK_APP="wsgi.py"  # Windows (PowerShell)
+export FLASK_APP=wsgi.py  # Linux/Mac
+
+flask db upgrade
+```
+
+E, se aplicável, a migration manual antiga:
 
 ```bash
 python migrations_manual/add_avaliacao_data.py
@@ -95,6 +109,14 @@ login interativo no servidor.
 7. No `.env` (local) ou nas variáveis de ambiente do PythonAnywhere, defina:
    ```
    GOOGLE_SERVICE_ACCOUNT_FILE=instance/google-service-account.json
+   GOOGLE_DRIVE_FOLDER_ID=id_copiado_no_passo_6
+   ```
+   Em plataformas sem disco persistente pra guardar esse `.json` (ex: Render
+   sem o arquivo commitado), use `GOOGLE_SERVICE_ACCOUNT_JSON` no lugar de
+   `GOOGLE_SERVICE_ACCOUNT_FILE`, colando o **conteúdo inteiro do JSON**
+   como valor da variável de ambiente:
+   ```
+   GOOGLE_SERVICE_ACCOUNT_JSON={"type": "service_account", ...}
    GOOGLE_DRIVE_FOLDER_ID=id_copiado_no_passo_6
    ```
 8. Rode `pip install -r requirements.txt` para instalar as dependências do

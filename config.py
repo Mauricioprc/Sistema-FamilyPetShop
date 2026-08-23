@@ -16,13 +16,17 @@ class Config:
             "Configure no arquivo .env."
         )
 
-    # Banco de dados — caminho unico em instance/
-    db_path = os.path.join(basedir, 'instance', 'petshop.db')
+    # Banco de dados — caminho configuravel via INSTANCE_DIR (ex: disco
+    # persistente do Render em /var/data). Sem a env var, cai no
+    # basedir/instance de sempre, pra nao quebrar o dev local.
+    INSTANCE_DIR = os.environ.get('INSTANCE_DIR', os.path.join(basedir, 'instance'))
+    db_path = os.path.join(INSTANCE_DIR, 'petshop.db')
     SQLALCHEMY_DATABASE_URI = 'sqlite:///' + db_path
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # Upload de arquivos
-    UPLOAD_FOLDER = os.path.join('static', 'uploads')
+    # Upload de arquivos — tambem configuravel via env var, mesmo motivo do
+    # banco (precisa sobreviver a redeploys em disco persistente).
+    UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER', os.path.join('static', 'uploads'))
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
     MAX_CONTENT_LENGTH = 5 * 1024 * 1024  # 5MB
 
@@ -60,7 +64,11 @@ class Config:
     TURNSTILE_SECRET_KEY = os.environ.get('TURNSTILE_SECRET_KEY', '')
 
     # Backup no Google Drive (Service Account) — ver README.md
+    # GOOGLE_SERVICE_ACCOUNT_JSON: conteudo do JSON direto na env var (Render,
+    # onde nao ha disco persistente garantido fora do /var/data). Tem
+    # prioridade sobre GOOGLE_SERVICE_ACCOUNT_FILE quando definida.
     GOOGLE_SERVICE_ACCOUNT_FILE = os.environ.get('GOOGLE_SERVICE_ACCOUNT_FILE', '')
+    GOOGLE_SERVICE_ACCOUNT_JSON = os.environ.get('GOOGLE_SERVICE_ACCOUNT_JSON', '')
     GOOGLE_DRIVE_FOLDER_ID = os.environ.get('GOOGLE_DRIVE_FOLDER_ID', '')
 
 

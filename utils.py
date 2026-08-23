@@ -1,6 +1,7 @@
 import calendar
 import locale
 import os
+import tempfile
 import uuid
 import logging
 import requests
@@ -270,6 +271,36 @@ def verificar_turnstile(secret_key: Optional[str], token: str, remote_ip: Option
 # ============================================
 # BACKUP NO GOOGLE DRIVE (Service Account)
 # ============================================
+
+def resolver_service_account_file(
+    service_account_json: Optional[str],
+    service_account_file: Optional[str],
+    destino: Optional[str] = None
+) -> Optional[str]:
+    """
+    Resolve o caminho do arquivo JSON da Service Account do Google a usar.
+
+    Se `service_account_json` (conteudo do JSON, ex: env var
+    GOOGLE_SERVICE_ACCOUNT_JSON no Render) estiver definido, grava esse
+    conteudo num arquivo temporario e retorna o caminho dele — usado em
+    plataformas onde nao ha um arquivo .json versionado/persistido, so a
+    env var com o conteudo. Caso contrario, retorna `service_account_file`
+    sem alteracao (comportamento atual, com caminho de arquivo).
+
+    Nunca loga o conteudo do JSON.
+    """
+    if service_account_json:
+        destino = destino or os.path.join(tempfile.gettempdir(), 'google-service-account.json')
+        try:
+            with open(destino, 'w', encoding='utf-8') as f:
+                f.write(service_account_json)
+            logger.info(f"Credenciais da Service Account do Google escritas em {destino}")
+            return destino
+        except OSError as e:
+            logger.error(f"Erro ao escrever arquivo temporario da Service Account: {e}")
+            return None
+    return service_account_file
+
 
 def enviar_backup_para_drive(
     caminho_arquivo, nome_no_drive: str,
