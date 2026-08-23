@@ -67,6 +67,49 @@ python scripts/backup.py listar
 4. Argumentos: `scripts\backup.py`
 5. Pasta inicial: caminho completo do projeto
 
+**Enviar cópia automática para o Google Drive (opcional):**
+
+Além da cópia local em `instance/backups`, o `scripts/backup.py` também pode
+enviar o backup do dia para uma pasta do Google Drive, usando uma
+**Service Account** do Google. Essa abordagem funciona tanto local quanto
+no **PythonAnywhere Free** (que só libera acesso à internet para uma lista
+de domínios conhecidos — as APIs do Google estão nela), sem precisar de
+login interativo no servidor.
+
+1. No [Google Cloud Console](https://console.cloud.google.com/), crie um
+   projeto (ou use um existente) e ative a **Google Drive API**
+   (menu "APIs e serviços" → "Ativar APIs e serviços" → busque "Google Drive API").
+2. Em "Credenciais" → "Criar credenciais" → **Conta de serviço**, dê um nome
+   (ex: `petshop-backup`) e conclua sem adicionar papéis/permissões extras.
+3. Abra a conta de serviço criada → aba "Chaves" → "Adicionar chave" →
+   "Criar nova chave" → formato **JSON**. Isso baixa um arquivo `.json`.
+4. Copie esse arquivo para `instance/google-service-account.json` no projeto
+   (essa pasta já é ignorada pelo git — nunca vai parar no GitHub).
+5. No Google Drive normal (com sua conta pessoal), crie uma pasta, ex:
+   "PetShopBackups". Clique em Compartilhar e adicione o **e-mail da conta
+   de serviço** (algo como `petshop-backup@SEU-PROJETO.iam.gserviceaccount.com`,
+   encontrado no arquivo JSON no campo `client_email`) com permissão de
+   **Editor**.
+6. Pegue o **ID da pasta**: abra a pasta no navegador e copie o trecho final
+   da URL (`https://drive.google.com/drive/folders/`**`ESSE_TRECHO_AQUI`**).
+7. No `.env` (local) ou nas variáveis de ambiente do PythonAnywhere, defina:
+   ```
+   GOOGLE_SERVICE_ACCOUNT_FILE=instance/google-service-account.json
+   GOOGLE_DRIVE_FOLDER_ID=id_copiado_no_passo_6
+   ```
+8. Rode `pip install -r requirements.txt` para instalar as dependências do
+   Google (`google-api-python-client`, `google-auth`).
+9. Pronto — a partir do próximo backup, o arquivo também é enviado ao Drive
+   automaticamente. Se essas variáveis não estiverem configuradas, o backup
+   local continua funcionando normalmente e o envio ao Drive é apenas pulado.
+
+**Agendar diariamente em produção (PythonAnywhere):**
+1. Aba **Tasks** no painel do PythonAnywhere
+2. Comando: `cd /home/SEU_USUARIO/Sistema-FamilyPetShop && python scripts/backup.py`
+3. Horário: escolha um horário de baixo movimento (ex: 03:00)
+4. Contas Free têm direito a 1 tarefa diária — essa já cobre o backup local
+   + envio ao Drive em uma única execução
+
 ---
 
 ## Rodar os testes

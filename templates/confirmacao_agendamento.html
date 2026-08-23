@@ -23,6 +23,14 @@
     </div>
   </header>
 
+  {# === MENSAGENS FLASH (evita que fiquem presas na sessão e "vazem" pro admin) === #}
+  {% if get_flashed_messages() %}
+  <div class="container mt-3">
+    {% from 'components/alert.html' import flash_messages %}
+    {{ flash_messages() }}
+  </div>
+  {% endif %}
+
   <div class="container pb-5">
     <div class="success-card text-center">
       <img src="{{ url_for('static', filename='mascote_patalevantada .png') }}" alt="Mascote" class="mascote-sucesso" loading="lazy">

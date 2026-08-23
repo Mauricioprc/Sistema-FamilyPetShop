@@ -1,6 +1,9 @@
 # Variáveis de ambiente — NUNCA versionar
 .env
 
+# Chave da Service Account do Google (backup no Drive) — NUNCA versionar
+google-service-account*.json
+
 # Banco de dados — nunca versionar o de produção
 *.db
 instance/
