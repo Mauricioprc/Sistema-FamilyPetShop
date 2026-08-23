@@ -59,6 +59,10 @@ class Config:
     TURNSTILE_SITE_KEY = os.environ.get('TURNSTILE_SITE_KEY', '')
     TURNSTILE_SECRET_KEY = os.environ.get('TURNSTILE_SECRET_KEY', '')
 
+    # Backup no Google Drive (Service Account) — ver README.md
+    GOOGLE_SERVICE_ACCOUNT_FILE = os.environ.get('GOOGLE_SERVICE_ACCOUNT_FILE', '')
+    GOOGLE_DRIVE_FOLDER_ID = os.environ.get('GOOGLE_DRIVE_FOLDER_ID', '')
+
 
 class DevelopmentConfig(Config):
     DEBUG = True

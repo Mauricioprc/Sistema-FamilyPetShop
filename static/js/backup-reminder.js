@@ -1,6 +1,7 @@
 /**
  * backup-reminder.js — Aviso para o usuário fazer backup do banco de dados
- * a cada 7 dias. Ao clicar em "Sim", baixa o arquivo .db automaticamente.
+ * diariamente. Ao clicar em "Sim", baixa o arquivo .db automaticamente
+ * (e o servidor também envia uma cópia para o Google Drive, se configurado).
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -26,7 +27,7 @@ function mostrarModalBackup() {
                 <h5 class="modal-title"><i class="bi bi-cloud-arrow-down-fill"></i> Hora do backup!</h5>
               </div>
               <div class="modal-body">
-                <p>Já faz <strong>7 dias ou mais</strong> desde o último backup do sistema.</p>
+                <p>Já faz <strong>1 dia ou mais</strong> desde o último backup do sistema.</p>
                 <p>Deseja baixar agora uma cópia do banco de dados para o seu computador?</p>
               </div>
               <div class="modal-footer">

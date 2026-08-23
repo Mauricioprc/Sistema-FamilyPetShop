@@ -268,6 +268,78 @@ def verificar_turnstile(secret_key: Optional[str], token: str, remote_ip: Option
 
 
 # ============================================
+# BACKUP NO GOOGLE DRIVE (Service Account)
+# ============================================
+
+def enviar_backup_para_drive(
+    caminho_arquivo, nome_no_drive: str,
+    service_account_file: Optional[str], folder_id: Optional[str]
+) -> bool:
+    """
+    Envia uma copia de um arquivo para uma pasta do Google Drive usando
+    uma Service Account (sem login interativo — funciona em servidor).
+
+    Usado tanto pelo script local (scripts/backup.py, via Task Scheduler)
+    quanto pela rota web de backup (rotas/backup.py, quando o usuario
+    confirma o aviso de backup no sistema).
+
+    Args:
+        caminho_arquivo: caminho do arquivo .db a enviar
+        nome_no_drive: nome com que o arquivo vai aparecer no Drive
+        service_account_file: caminho do JSON da Service Account
+        folder_id: ID da pasta do Drive (compartilhada com a Service Account)
+
+    Returns:
+        True se enviado com sucesso, False caso contrario (nunca lanca
+        excecao — o backup local/download nao deve ser afetado por uma
+        falha aqui).
+    """
+    if not service_account_file or not folder_id:
+        return False  # envio ao Drive desativado (variaveis nao configuradas)
+
+    from pathlib import Path
+    caminho_arquivo = Path(caminho_arquivo)
+
+    keyfile = Path(service_account_file)
+    if not keyfile.is_absolute():
+        keyfile = Path(__file__).parent / keyfile
+
+    if not keyfile.exists():
+        logger.warning(f"Arquivo da Service Account nao encontrado em {keyfile}.")
+        return False
+
+    if not caminho_arquivo.exists():
+        logger.warning(f"Arquivo de backup nao encontrado em {caminho_arquivo}.")
+        return False
+
+    try:
+        from google.oauth2 import service_account
+        from googleapiclient.discovery import build
+        from googleapiclient.http import MediaFileUpload
+
+        credenciais = service_account.Credentials.from_service_account_file(
+            str(keyfile), scopes=['https://www.googleapis.com/auth/drive.file']
+        )
+        servico = build('drive', 'v3', credentials=credenciais, cache_discovery=False)
+
+        metadata = {'name': nome_no_drive, 'parents': [folder_id]}
+        midia = MediaFileUpload(str(caminho_arquivo), mimetype='application/octet-stream', resumable=False)
+        servico.files().create(body=metadata, media_body=midia, fields='id').execute()
+
+        logger.info(f"Backup enviado para o Google Drive: {nome_no_drive}")
+        return True
+    except ImportError:
+        logger.warning(
+            "Dependencias do Google Drive nao instaladas (google-api-python-client, "
+            "google-auth) — envio ao Drive pulado."
+        )
+        return False
+    except Exception as e:
+        logger.error(f"Erro ao enviar backup para o Drive: {e}")
+        return False
+
+
+# ============================================
 # FUNÇÕES DE DATA/HORA
 # ============================================
 

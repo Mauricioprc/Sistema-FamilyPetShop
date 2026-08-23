@@ -103,12 +103,21 @@ login interativo no servidor.
    automaticamente. Se essas variáveis não estiverem configuradas, o backup
    local continua funcionando normalmente e o envio ao Drive é apenas pulado.
 
-**Agendar diariamente em produção (PythonAnywhere):**
-1. Aba **Tasks** no painel do PythonAnywhere
-2. Comando: `cd /home/SEU_USUARIO/Sistema-FamilyPetShop && python scripts/backup.py`
-3. Horário: escolha um horário de baixo movimento (ex: 03:00)
-4. Contas Free têm direito a 1 tarefa diária — essa já cobre o backup local
-   + envio ao Drive em uma única execução
+**Em produção (PythonAnywhere Free — sem aba Tasks disponível):**
+
+Contas Free do PythonAnywhere não têm a aba Tasks (agendamento automático é
+recurso pago), então o backup em produção é feito pelo **aviso dentro do
+próprio sistema**: todo dia, ao logar, o admin vê um modal lembrando de
+clicar em "Sim, baixar agora" (`GET /backup/download`). Esse clique já:
+1. Baixa o `.db` para o computador de quem está logado
+2. Envia automaticamente uma cópia para o Google Drive (se
+   `GOOGLE_SERVICE_ACCOUNT_FILE`/`GOOGLE_DRIVE_FOLDER_ID` estiverem
+   configurados nas variáveis de ambiente do PythonAnywhere)
+3. Marca a data do backup, então o aviso só volta a aparecer no dia seguinte
+
+Se sua conta do PythonAnywhere for paga (Hacker ou superior), prefira
+agendar `python scripts/backup.py` na aba Tasks diariamente — é totalmente
+automático e não depende de alguém estar logado no sistema naquele dia.
 
 ---
 

@@ -117,7 +117,7 @@
   <script src="{{ cache_bust('js/main.js') }}"></script>
 
   {% if current_user.is_authenticated %}
-  <!-- Aviso de backup periódico (a cada 7 dias) -->
+  <!-- Aviso de backup diário -->
   <script src="{{ cache_bust('js/backup-reminder.js') }}"></script>
   {% endif %}
 

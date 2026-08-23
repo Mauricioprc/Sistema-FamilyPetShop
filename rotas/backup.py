@@ -2,8 +2,13 @@
 Blueprint de backup do banco de dados.
 
 Disponibiliza:
-- GET /backup/status   -> verifica se já passaram 7 dias desde o último backup
-- GET /backup/download -> baixa o petshop.db e marca a data do backup como "hoje"
+- GET /backup/status   -> verifica se já passou 1 dia desde o último backup
+- GET /backup/download -> baixa o petshop.db, envia uma cópia para o Google
+  Drive (se configurado) e marca a data do backup como "hoje"
+
+Existe porque em produção (PythonAnywhere Free) não há como agendar uma
+tarefa automática (Tasks é recurso pago) — então o próprio sistema lembra
+o usuário logado, todo dia, de clicar para gerar o backup.
 
 O controle de "última data de backup" é guardado em instance/last_backup.json
 (arquivo simples, não precisa de tabela no banco).
@@ -17,10 +22,12 @@ from typing import Optional
 from flask import Blueprint, current_app, jsonify, send_file
 from flask_login import login_required
 
+from utils import enviar_backup_para_drive
+
 logger = logging.getLogger(__name__)
 backup_bp = Blueprint('backup', __name__, url_prefix='/backup')
 
-INTERVALO_DIAS = 7
+INTERVALO_DIAS = 1
 
 
 def _arquivo_controle() -> Path:
@@ -75,7 +82,9 @@ def status():
 @login_required
 def download():
     """
-    Envia o arquivo petshop.db para download e marca o backup como feito hoje.
+    Envia o arquivo petshop.db para download, envia uma cópia para o
+    Google Drive (se GOOGLE_SERVICE_ACCOUNT_FILE/GOOGLE_DRIVE_FOLDER_ID
+    estiverem configurados) e marca o backup como feito hoje.
     """
     db_path = Path(current_app.instance_path) / 'petshop.db'
 
@@ -87,6 +96,18 @@ def download():
 
     nome_arquivo = f"backup_petshop_{datetime.now().strftime('%Y-%m-%d_%H%M')}.db"
     logger.info(f'Backup do banco baixado: {nome_arquivo}')
+
+    # Envio ao Drive nao deve impedir o download caso falhe.
+    try:
+        enviado = enviar_backup_para_drive(
+            db_path, nome_arquivo,
+            current_app.config.get('GOOGLE_SERVICE_ACCOUNT_FILE'),
+            current_app.config.get('GOOGLE_DRIVE_FOLDER_ID')
+        )
+        if enviado:
+            logger.info(f'Backup tambem enviado ao Google Drive: {nome_arquivo}')
+    except Exception as e:
+        logger.error(f'Erro ao enviar backup ao Google Drive: {e}')
 
     return send_file(
         db_path,

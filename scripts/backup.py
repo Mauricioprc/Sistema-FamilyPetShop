@@ -34,8 +34,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Configuracoes
+# Permite "import utils" mesmo rodando como script solto (python scripts/backup.py)
 BASE_DIR = Path(__file__).parent.parent
+sys.path.insert(0, str(BASE_DIR))
+from utils import enviar_backup_para_drive  # noqa: E402
+
+# Configuracoes
 DB_ORIGEM = BASE_DIR / 'instance' / 'petshop.db'
 BACKUP_DIR = BASE_DIR / 'instance' / 'backups'
 MANTER_DIAS = 30  # quantos dias de backup manter
@@ -48,44 +52,16 @@ GOOGLE_DRIVE_FOLDER_ID = os.environ.get('GOOGLE_DRIVE_FOLDER_ID', '').strip()
 
 def enviar_para_drive(caminho_backup: Path) -> None:
     """
-    Envia uma copia do backup para uma pasta do Google Drive usando uma
-    Service Account (sem necessidade de login interativo no servidor).
-
-    Falha aqui NAO derruba o backup local: so registra um aviso, pois
-    o arquivo local ja foi salvo com sucesso antes desta etapa.
+    Envia uma copia do backup para o Google Drive (ver utils.enviar_backup_para_drive).
+    Falha aqui NAO derruba o backup local: so imprime um aviso, pois o
+    arquivo local ja foi salvo com sucesso antes desta etapa.
     """
-    if not GOOGLE_SERVICE_ACCOUNT_FILE or not GOOGLE_DRIVE_FOLDER_ID:
-        return  # envio ao Drive desativado (variaveis nao configuradas)
-
-    keyfile = Path(GOOGLE_SERVICE_ACCOUNT_FILE)
-    if not keyfile.is_absolute():
-        keyfile = BASE_DIR / keyfile
-
-    if not keyfile.exists():
-        print(f"⚠️  Arquivo da Service Account nao encontrado em {keyfile} (backup local OK).")
-        return
-
-    try:
-        from google.oauth2 import service_account
-        from googleapiclient.discovery import build
-        from googleapiclient.http import MediaFileUpload
-
-        credenciais = service_account.Credentials.from_service_account_file(
-            str(keyfile), scopes=['https://www.googleapis.com/auth/drive.file']
-        )
-        servico = build('drive', 'v3', credentials=credenciais, cache_discovery=False)
-
-        metadata = {'name': caminho_backup.name, 'parents': [GOOGLE_DRIVE_FOLDER_ID]}
-        midia = MediaFileUpload(str(caminho_backup), mimetype='application/octet-stream', resumable=False)
-        servico.files().create(body=metadata, media_body=midia, fields='id').execute()
-
+    if enviar_backup_para_drive(
+        caminho_backup, caminho_backup.name, GOOGLE_SERVICE_ACCOUNT_FILE, GOOGLE_DRIVE_FOLDER_ID
+    ):
         print(f"☁️  Enviado para o Google Drive: {caminho_backup.name}")
-    except ImportError:
-        print("⚠️  Dependencias do Google Drive nao instaladas (google-api-python-client, "
-              "google-auth) — envio ao Drive pulado (backup local OK). "
-              "Rode: pip install -r requirements.txt")
-    except Exception as e:
-        print(f"⚠️  Erro ao enviar para o Drive (backup local OK): {e}")
+    elif GOOGLE_SERVICE_ACCOUNT_FILE and GOOGLE_DRIVE_FOLDER_ID:
+        print("⚠️  Falha ao enviar para o Drive (backup local OK) — veja o log para detalhes.")
 
 
 def fazer_backup():
