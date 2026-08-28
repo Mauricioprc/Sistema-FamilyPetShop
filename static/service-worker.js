@@ -1,4 +1,4 @@
-const CACHE_NAME = 'familypet-v3';
+const CACHE_NAME = 'familypet-v4';
 const OFFLINE_URL = '/offline';
 
 // App shell: assets essenciais, sem hash de cache-busting nem páginas dinâmicas

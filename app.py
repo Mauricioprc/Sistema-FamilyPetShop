@@ -2,7 +2,7 @@ import os
 import time
 import logging
 from logging.handlers import RotatingFileHandler
-from flask import Flask, app, url_for, render_template
+from flask import Flask, app, url_for, render_template, request
 from config import Config, config
 from extensions import db, migrate, login_manager, csrf, limiter
 from utils import configurar_locale, format_currency, resolver_service_account_file
@@ -112,6 +112,18 @@ def create_app(config_name='development'):
             url_arquivo = url_for('static', filename=filename)
             return f"{url_arquivo}?v={hash_value}"
         return dict(cache_bust=cache_bust)
+
+    # O service-worker.js nunca pode ficar preso no cache de 30 dias dos
+    # demais estaticos: e' o proprio arquivo que o navegador usa pra decidir
+    # se ha uma versao nova pra instalar. Se ficar cacheado por semanas, o
+    # navegador so vai buscar a versao nova (com o CACHE_NAME atualizado, que
+    # e' o que invalida o cache antigo de icones/imagens) muito depois de ela
+    # ser publicada — foi isso que causou o icone antigo persistindo no PWA.
+    @app.after_request
+    def _no_cache_service_worker(response):
+        if request.path == '/static/service-worker.js':
+            response.headers['Cache-Control'] = 'no-cache'
+        return response
 
     _registrar_blueprints(app)
     _registrar_context_processors(app)
