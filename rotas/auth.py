@@ -6,7 +6,7 @@ from extensions import login_manager, limiter
 import logging
 
 logger = logging.getLogger(__name__)
-auth_bp = Blueprint('auth', __name__)
+auth_bp = Blueprint('auth', __name__, url_prefix='/admin')
 
 
 class AdminUser(UserMixin):

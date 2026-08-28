@@ -11,7 +11,7 @@ from services.agenda_service import (
 )
 from utils import devolver_credito, parse_preco
 
-agenda_bp = Blueprint('agenda', __name__)
+agenda_bp = Blueprint('agenda', __name__, url_prefix='/admin')
 
 
 def _is_ajax():

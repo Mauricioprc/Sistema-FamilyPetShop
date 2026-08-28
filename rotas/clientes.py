@@ -5,7 +5,7 @@ from sqlalchemy import func, case, or_
 from extensions import db
 from models import Cliente, Atendimento, Pacote
 
-clientes_bp = Blueprint('clientes', __name__)
+clientes_bp = Blueprint('clientes', __name__, url_prefix='/admin')
 
 
 def _validar_cliente(form) -> tuple[bool, str]:

@@ -71,7 +71,7 @@ def test_editar_pacote_com_data_diferente_marca_customizado(app, db, client):
     pid = p.id
 
     _login(client)
-    client.post(f'/pacote/editar/{pid}', data={
+    client.post(f'/admin/pacote/editar/{pid}', data={
         'nome_servico': 'Banho', 'preco_pacote': '100,00', 'creditos_totais': '4',
         'data_vencimento': '2026-02-15'
     })
@@ -92,7 +92,7 @@ def test_editar_pacote_sem_mudar_data_nao_marca_customizado(app, db, client):
     pid = p.id
 
     _login(client)
-    client.post(f'/pacote/editar/{pid}', data={
+    client.post(f'/admin/pacote/editar/{pid}', data={
         'nome_servico': 'Banho', 'preco_pacote': '100,00', 'creditos_totais': '4',
         'data_vencimento': '2026-01-10'  # mesma data
     })

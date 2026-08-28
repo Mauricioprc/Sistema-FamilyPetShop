@@ -103,6 +103,15 @@ def solicitar_agendamento():
     )
 
 
+@publico_bp.route('/', methods=['GET', 'POST'])
+@limiter.limit(LIMITE_PUBLICO)
+def raiz():
+    # Preparacao para dominio proprio: a raiz do site passa a servir a
+    # pagina publica de agendamento (mesma view de /solicitar_agendamento,
+    # que continua existindo e funcionando por compatibilidade).
+    return solicitar_agendamento()
+
+
 @publico_bp.route('/confirmacao_agendamento')
 def confirmacao():
     return render_template('confirmacao_agendamento.html')

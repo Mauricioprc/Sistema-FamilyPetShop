@@ -70,7 +70,7 @@ def test_listar_calcula_divida_por_cliente_sem_n_mais_1(db, client):
     db.session.commit()
 
     _login(client)
-    resp = client.get('/clientes')
+    resp = client.get('/admin/clientes')
     assert resp.status_code == 200
     html = resp.get_data(as_text=True)
 

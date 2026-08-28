@@ -11,7 +11,7 @@ from services.previsao_service import (
     definir_previsao_manual,
 )
 
-dashboard_bp = Blueprint('dashboard', __name__)
+dashboard_bp = Blueprint('dashboard', __name__, url_prefix='/admin')
 
 # Função auxiliar para colocar a máscara de dinheiro (ex: 1.500,00)
 def formata_brl(valor):

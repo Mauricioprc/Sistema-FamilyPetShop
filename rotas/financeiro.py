@@ -7,7 +7,7 @@ from extensions import db
 from models import Atendimento, Pacote, Despesa, Cliente
 from utils import parse_preco
 
-financeiro_bp = Blueprint('financeiro', __name__)
+financeiro_bp = Blueprint('financeiro', __name__, url_prefix='/admin')
 
 
 @financeiro_bp.route('/financeiro')

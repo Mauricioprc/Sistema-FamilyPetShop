@@ -2,8 +2,7 @@ import os
 import time
 import logging
 from logging.handlers import RotatingFileHandler
-from flask import Flask, app, redirect, url_for, render_template
-from flask_login import login_required
+from flask import Flask, app, url_for, render_template
 from config import Config, config
 from extensions import db, migrate, login_manager, csrf, limiter
 from utils import configurar_locale, format_currency, resolver_service_account_file
@@ -210,11 +209,10 @@ def _registrar_error_handlers(app):
 
 def _registrar_rotas(app):
     """Registra rotas raiz"""
-    @app.route('/')
-    @login_required
-    def index():
-        return redirect(url_for('agenda.agenda_do_dia'))
-
+    # A raiz ('/') agora e' servida pelo publico_bp (pagina publica de
+    # agendamento — preparacao para dominio proprio). O painel admin vive
+    # em /admin/ e /admin/dashboard (dashboard_bp), protegidos por
+    # @login_required, que ja redireciona sozinho pra /admin/login.
     @app.route('/offline')
     def offline():
         return render_template('offline.html')

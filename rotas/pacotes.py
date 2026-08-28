@@ -9,7 +9,7 @@ from services.pacote_service import criar_pacote, renovar_pacote
 from utils import parse_preco, calcular_datas_pacote, calcular_datas_renovacao
 import json
 
-pacotes_bp = Blueprint('pacotes', __name__)
+pacotes_bp = Blueprint('pacotes', __name__, url_prefix='/admin')
 
 
 @pacotes_bp.route('/pacotes')
