@@ -90,8 +90,14 @@
   <div class="gradient-divider"></div>
 
   <div class="container mt-4">
-    {% from 'components/alert.html' import flash_messages %}
-    {{ flash_messages() }}
+    {# Nunca mostra no admin uma flash que se originou do site publico
+       (ver app.py:_marcar_origem_flash) — so descarta em silencio. #}
+    {% if session.pop('_flash_publico', False) %}
+      {% set _ = get_flashed_messages() %}
+    {% else %}
+      {% from 'components/alert.html' import flash_messages %}
+      {{ flash_messages() }}
+    {% endif %}
     <div id="ajax-alerts"></div>
     {% block content %}{% endblock %}
   </div>

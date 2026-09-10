@@ -2,7 +2,8 @@ import os
 import time
 import logging
 from logging.handlers import RotatingFileHandler
-from flask import Flask, app, url_for, render_template, request
+from flask import Flask, app, url_for, render_template, request, session
+from flask_login import current_user
 from werkzeug.middleware.proxy_fix import ProxyFix
 from config import Config, config
 from extensions import db, migrate, login_manager, csrf, limiter
@@ -133,6 +134,32 @@ def create_app(config_name='development'):
     def _no_cache_service_worker(response):
         if request.path == '/static/service-worker.js':
             response.headers['Cache-Control'] = 'no-cache'
+        return response
+
+    # Marca a origem de qualquer mensagem flash que tenha acabado de ser
+    # criada nesta requisicao (session['_flashes'] e' o que o Flask usa
+    # internamente pra guardar flash()). Isso e' o que garante que uma
+    # mensagem de erro/sucesso do site publico NUNCA apareca depois numa
+    # tela do admin (e vice-versa) — mesmo se o navegador nao chegar a
+    # carregar a proxima pagina esperada (aba fechada, conexao caiu no
+    # meio do redirect, etc).
+    #
+    # Sinal usado: blueprint 'publico' (as unicas rotas de verdade
+    # publicas — /solicitar_agendamento, /submeter_avaliacao) E usuario
+    # nao autenticado. O "E nao autenticado" existe pra nao confundir com
+    # as rotas administrativas que tambem vivem nesse blueprint
+    # (/solicitacoes, /avaliacoes/pendentes etc.) — essas exigem
+    # @login_required, entao current_user ja estara autenticado ali. A
+    # pagina de login (blueprint 'auth') fica de fora de propósito: ela
+    # roda sem login mas as mensagens dela (usuario/senha invalidos, "faca
+    # login para continuar") sao do proprio sistema admin, nao do site do
+    # cliente.
+    @app.after_request
+    def _marcar_origem_flash(response):
+        if session.get('_flashes'):
+            session['_flash_publico'] = (
+                request.blueprint == 'publico' and not current_user.is_authenticated
+            )
         return response
 
     # Headers de seguranca basicos, aplicados a toda resposta. Nao

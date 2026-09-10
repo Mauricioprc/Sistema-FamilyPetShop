@@ -32,12 +32,18 @@
     </div>
   </nav>
 
-  {# === MENSAGENS FLASH (erros de validação, captcha, confirmação) === #}
-  {% if get_flashed_messages() %}
-  <div class="container" style="margin-top: 90px;">
-    {% from 'components/alert.html' import flash_messages %}
-    {{ flash_messages() }}
-  </div>
+  {# === MENSAGENS FLASH (erros de validação, captcha, confirmação) ===
+     Nunca mostra aqui uma flash que se originou de uma acao do admin
+     (ver app.py:_marcar_origem_flash) — so descarta em silencio. #}
+  {% if session.pop('_flash_publico', True) %}
+    {% if get_flashed_messages() %}
+    <div class="container" style="margin-top: 90px;">
+      {% from 'components/alert.html' import flash_messages %}
+      {{ flash_messages() }}
+    </div>
+    {% endif %}
+  {% else %}
+    {% set _ = get_flashed_messages() %}
   {% endif %}
 
   {# Navbar Mobile #}
