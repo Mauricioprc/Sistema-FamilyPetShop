@@ -3,7 +3,7 @@ from flask_login import login_required
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
 from sqlalchemy import or_
 from extensions import db
-from models import Atendimento, Pacote, Cliente, StatusPacote
+from models import Atendimento, Pacote, Cliente, StatusPacote, StatusAtendimento
 from rotas import clientes
 from services.pacote_service import criar_pacote, renovar_pacote
 from utils import parse_preco, calcular_datas_pacote, calcular_datas_renovacao
@@ -206,6 +206,51 @@ def excluir(pacote_id):
         db.session.commit()
         flash('Pacote excluido com sucesso!', 'success')
     return redirect(request.referrer or url_for('pacotes.listar'))
+
+
+@pacotes_bp.route('/pacote/preparar_renovacao/<int:pacote_id>')
+@login_required
+def preparar_renovacao(pacote_id):
+    """
+    Rede de seguranca: permite retomar a renovacao de um pacote concluido
+    direto da tela de Pacotes, para o caso de a lembranca no modal
+    pos-presenca ter sido perdida (sessao expirada, aba fechada, etc).
+    Reaproveita o mesmo modal/fluxo de 'agenda.agenda_do_dia'.
+    """
+    pacote = db.get_or_404(Pacote, pacote_id)
+
+    if pacote.status != StatusPacote.CONCLUIDO.value:
+        flash('Este pacote ainda nao foi concluido.', 'warning')
+        return redirect(url_for('pacotes.listar', filtro='concluidos'))
+
+    if pacote.renovado:
+        flash('Este pacote ja foi renovado.', 'warning')
+        return redirect(url_for('pacotes.listar', filtro='concluidos'))
+
+    ultimo = pacote.atendimentos.filter_by(
+        status_presenca=StatusAtendimento.PRESENTE.value
+    ).order_by(Atendimento.data.desc()).first()
+
+    if not ultimo:
+        flash('Nao foi possivel identificar a ultima data do pacote.', 'danger')
+        return redirect(url_for('pacotes.listar', filtro='concluidos'))
+
+    session['pacote_para_renovar'] = {
+        'pacote_id': pacote.id,
+        'cliente_id': pacote.cliente_id,
+        'nome_servico': pacote.nome_servico,
+        'creditos_totais': pacote.creditos_totais,
+        'preco_pacote': pacote.preco_pacote,
+        'dia_semana_fixo': pacote.dia_semana_fixo,
+        'tipo_agendamento': pacote.tipo_agendamento,
+        'ultima_data_str': ultimo.data.isoformat(),
+        'vencimento_customizado': pacote.vencimento_customizado,
+        'data_vencimento_anterior': pacote.data_vencimento.isoformat() if pacote.data_vencimento else None,
+        'telefone_cliente': pacote.cliente.telefone,
+        'nome_tutor': pacote.cliente.nome_tutor,
+        'nome_pet': pacote.cliente.nome_pet,
+    }
+    return redirect(url_for('agenda.agenda_do_dia', data=ultimo.data.isoformat()))
 
 
 @pacotes_bp.route('/pacote/calcular_renovacao', methods=['POST'])
