@@ -3,6 +3,7 @@ import time
 import logging
 from logging.handlers import RotatingFileHandler
 from flask import Flask, app, url_for, render_template, request
+from werkzeug.middleware.proxy_fix import ProxyFix
 from config import Config, config
 from extensions import db, migrate, login_manager, csrf, limiter
 from utils import configurar_locale, format_currency, resolver_service_account_file
@@ -60,6 +61,15 @@ def create_app(config_name='development'):
     if instance_path:
         instance_path = os.path.abspath(instance_path)
     app = Flask(__name__, instance_path=instance_path)
+
+    # O app roda atras de um proxy reverso em producao (Render). Sem isso,
+    # request.remote_addr e' sempre o IP interno do proxy — igual pra
+    # TODAS as requisicoes — o que quebra o rate limiting por IP (vira
+    # global, um cliente pode bloquear os outros) e o remoteip enviado ao
+    # Turnstile. x_for=1/x_proto=1: confia em exatamente 1 hop de proxy,
+    # que e' a topologia do Render (o proxy deles descarta/sobrescreve
+    # qualquer X-Forwarded-For que um cliente malicioso tente forjar).
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
 
     if config_name not in config:
         config_name = 'development'
@@ -123,6 +133,31 @@ def create_app(config_name='development'):
     def _no_cache_service_worker(response):
         if request.path == '/static/service-worker.js':
             response.headers['Cache-Control'] = 'no-cache'
+        return response
+
+    # Headers de seguranca basicos, aplicados a toda resposta. Nao
+    # dependem de nenhuma lib nova (Flask-Talisman etc) e nao mudam
+    # nenhum comportamento visivel da pagina.
+    @app.after_request
+    def _security_headers(response):
+        # Impede que o site seja carregado dentro de um <iframe> de outro
+        # dominio (protecao contra clickjacking nas paginas publicas e no
+        # login do admin).
+        response.headers.setdefault('X-Frame-Options', 'SAMEORIGIN')
+        # Impede o navegador de tentar "adivinhar" o tipo de um arquivo
+        # diferente do Content-Type declarado (mitiga alguns vetores de
+        # XSS via upload/serving de arquivos estaticos).
+        response.headers.setdefault('X-Content-Type-Options', 'nosniff')
+        # Nao vaza a URL completa (que pode conter dados do cliente em
+        # query string) como Referer para sites de terceiros linkados.
+        response.headers.setdefault('Referrer-Policy', 'strict-origin-when-cross-origin')
+        # HSTS so faz sentido quando a requisicao de fato chegou por HTTPS
+        # (request.is_secure so fica correto agora por causa do ProxyFix
+        # acima) — evita forcar HTTPS em dev local por HTTP.
+        if request.is_secure:
+            response.headers.setdefault(
+                'Strict-Transport-Security', 'max-age=31536000; includeSubDomains'
+            )
         return response
 
     _registrar_blueprints(app)
