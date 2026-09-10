@@ -174,6 +174,20 @@
                   <input type="range" id="peso_pet" name="peso_pet"
                          class="form-range" min="1" max="50" step="1" value="10" required>
                 </div>
+
+                <button type="button"
+                        class="btn btn-link btn-sm text-gold text-decoration-none mt-2 p-0 fw-bold"
+                        data-bs-toggle="collapse" data-bs-target="#ajudaPeso"
+                        aria-expanded="false" aria-controls="ajudaPeso">
+                  <i class="bi bi-question-circle"></i> Não sabe o peso do seu pet? Toque aqui para ajudar
+                </button>
+                <div class="collapse mt-3" id="ajudaPeso">
+                  <div class="card border-0 shadow-sm overflow-hidden">
+                    <img src="{{ url_for('static', filename='apoio_peso.jpg') }}"
+                         class="card-img-top" loading="lazy"
+                         alt="Guia de referência: quanto pesa um cachorro — Toy (menos de 5kg), Mini/Pequeno (5 a 10kg), Médio (10 a 25kg), Grande (25 a 40kg), Gigante (acima de 40kg)">
+                  </div>
+                </div>
               </div>
 
               {# Temperamento #}
