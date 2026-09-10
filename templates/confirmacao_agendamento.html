@@ -25,13 +25,13 @@
     </div>
   </header>
 
-  {# === MENSAGENS FLASH (evita que fiquem presas na sessão e "vazem" pro admin) === #}
-  {% if get_flashed_messages() %}
-  <div class="container mt-3">
-    {% from 'components/alert.html' import flash_messages %}
-    {{ flash_messages() }}
-  </div>
-  {% endif %}
+  {# Consome as mensagens flash da sessão (ex: "Solicitacao enviada!") sem
+     exibi-las: essa tela já mostra a mesma confirmação no próprio design
+     abaixo, então repetir como alerta laranja era redundante. Precisa
+     continuar "lendo" a lista aqui mesmo assim, senão a mensagem fica
+     presa na sessão e "vaza" pra próxima página que o navegador visitar
+     (ex: o admin, se for o mesmo navegador). #}
+  {% set _ = get_flashed_messages() %}
 
   <div class="container pb-5">
     <div class="success-card text-center">
