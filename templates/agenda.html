@@ -182,7 +182,10 @@
             <i class="bi bi-whatsapp"></i> Enviar Resumo ao Cliente
           </button>
           <button id="btn-calcular-renovacao" type="button" class="btn btn-orange-custom">Renovar Pacote</button>
-          <a href="{{ url_for('pacotes.limpar_renovacao') }}" class="btn btn-secondary">Fechar</a>
+          <a href="{{ url_for('pacotes.limpar_renovacao') }}" class="btn btn-secondary"
+             onclick="return confirm('Tem certeza que NÃO quer renovar o pacote agora? Você ainda pode renovar depois pela tela de Pacotes (filtro Concluídos).');">
+            Não Renovar Agora
+          </a>
         </div>
       </div>
     </div>
@@ -401,7 +404,10 @@ $(document).ready(function() {
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-primary-custom">Confirmar e Renovar</button>
           </form>
-          <a href="{{ url_for('pacotes.limpar_renovacao') }}" class="btn btn-secondary">Cancelar</a>`;
+          <a href="{{ url_for('pacotes.limpar_renovacao') }}" class="btn btn-secondary"
+             onclick="return confirm('Tem certeza que NÃO quer renovar o pacote agora? Você ainda pode renovar depois pela tela de Pacotes (filtro Concluídos).');">
+            Cancelar
+          </a>`;
       } catch(e) {
         corpo.innerHTML = `<p class="text-danger">Erro: ${e.message}</p>`;
       }

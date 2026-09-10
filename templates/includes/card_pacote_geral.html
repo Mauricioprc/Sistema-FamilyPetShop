@@ -2,11 +2,16 @@
   <div class="card-body">
     <div class="d-flex justify-content-between align-items-center">
       <h5 class="card-title mb-0">{{ pacote.creditos_totais }}x {{ pacote.nome_servico }}</h5>
-      {% if pacote.status == 'Ativo' %}
-          <span class="badge bg-success rounded-pill">{{ pacote.status }}</span>
-      {% else %}
-          <span class="badge bg-secondary rounded-pill">{{ pacote.status }}</span>
-      {% endif %}
+      <div class="d-flex gap-1">
+        {% if pacote.status == 'Ativo' %}
+            <span class="badge bg-success rounded-pill">{{ pacote.status }}</span>
+        {% else %}
+            <span class="badge bg-secondary rounded-pill">{{ pacote.status }}</span>
+            {% if pacote.renovado %}
+                <span class="badge bg-info rounded-pill" title="Ja gerou o proximo ciclo"><i class="bi bi-arrow-repeat"></i> Renovado</span>
+            {% endif %}
+        {% endif %}
+      </div>
     </div>
 
     <p class="card-subtitle mt-2 mb-1"><strong>Pet:</strong> {{ pacote.cliente.nome_pet }}</p>
@@ -52,8 +57,15 @@
       </div>
 
       <div class="d-flex gap-2 align-items-center">
+        {% if pacote.status == 'Concluido' and not pacote.renovado %}
+        <a href="{{ url_for('pacotes.preparar_renovacao', pacote_id=pacote.id) }}"
+           class="btn btn-sm btn-orange-custom rounded-pill px-3" title="Renovar Pacote">
+          <i class="bi bi-arrow-repeat"></i> Renovar
+        </a>
+        {% endif %}
+
         <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#editarPacote-geral-{{pacote.id}}">
-          <i class="bi bi-pencil"></i> 
+          <i class="bi bi-pencil"></i>
         </button>
 
         <form action="{{ url_for('pacotes.excluir', pacote_id=pacote.id) }}" method="POST" class="m-0" onsubmit="return confirm('Tem certeza que deseja excluir este pacote?')">

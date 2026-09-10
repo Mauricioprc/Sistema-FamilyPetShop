@@ -126,6 +126,14 @@ def renovar_pacote(dados: dict) -> tuple[bool, str]:
                 status_pagamento=StatusPagamento.PAGO_PACOTE.value
             ))
 
+        # Marca o pacote antigo como ja renovado, para nao ser oferecido
+        # de novo (modal pos-presenca ou botao na tela de Pacotes).
+        pacote_anterior_id = dados.get('pacote_id')
+        if pacote_anterior_id:
+            pacote_anterior = Pacote.query.get(pacote_anterior_id)
+            if pacote_anterior:
+                pacote_anterior.renovado = True
+
         db.session.commit()
         return True, 'Pacote renovado com sucesso!'
     except Exception as e:

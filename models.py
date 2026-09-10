@@ -114,6 +114,10 @@ class Pacote(db.Model):
     data_pagamento = db.Column(db.Date, nullable=True)
     data_vencimento = db.Column(db.Date, nullable=True)
     vencimento_customizado = db.Column(db.Boolean, default=False, nullable=False)
+    # Marca se este pacote (ja concluido) ja gerou um pacote seguinte via
+    # renovacao, para nao oferecer "Renovar" de novo (nem no modal pos-
+    # presenca, nem na tela de Pacotes) e evitar duplicar o proximo ciclo.
+    renovado = db.Column(db.Boolean, default=False, nullable=False)
     data_prevista_pagamento = db.Column(db.Date, nullable=True)
     metodo_pagamento = db.Column(db.String(50), nullable=True)
     dia_semana_fixo = db.Column(db.Integer, nullable=True)
