@@ -38,13 +38,36 @@ def agenda_do_dia():
         Atendimento.status_presenca == StatusAtendimento.AGENDADO.value
     ).order_by(Atendimento.data).all()
 
+    # Pacotes envolvidos nos modais de pós-confirmação de presença (ver
+    # confirmar_presenca_route). Buscamos o objeto completo e ja ordenamos
+    # os atendimentos aqui para o template so precisar iterar a lista.
+    dados_renovacao = session.get('pacote_para_renovar')
+    pacote_concluido = (Pacote.query.get(dados_renovacao['pacote_id'])
+                        if dados_renovacao else None)
+    atendimentos_pacote_concluido = (
+        pacote_concluido.atendimentos.order_by(Atendimento.data).all()
+        if pacote_concluido else []
+    )
+
+    dados_primeiro = session.get('pacote_primeiro_banho')
+    pacote_primeiro_banho = (Pacote.query.get(dados_primeiro['pacote_id'])
+                             if dados_primeiro else None)
+    atendimentos_primeiro_banho = (
+        pacote_primeiro_banho.atendimentos.order_by(Atendimento.data).all()
+        if pacote_primeiro_banho else []
+    )
+
     return render_template('agenda.html',
                            atendimentos=atendimentos,
                            atendimentos_atrasados=atendimentos_atrasados,
                            data_selecionada=data_sel,
                            hoje=hoje,
                            dia_anterior=data_sel - timedelta(days=1),
-                           proximo_dia=data_sel + timedelta(days=1))
+                           proximo_dia=data_sel + timedelta(days=1),
+                           pacote_concluido=pacote_concluido,
+                           atendimentos_pacote_concluido=atendimentos_pacote_concluido,
+                           pacote_primeiro_banho=pacote_primeiro_banho,
+                           atendimentos_primeiro_banho=atendimentos_primeiro_banho)
 
 
 @agenda_bp.route('/atendimentos')
@@ -201,17 +224,21 @@ def excluir(atendimento_id):
 @login_required
 def confirmar_presenca_route(atendimento_id):
     session.pop('pacote_para_renovar', None)
-    sucesso, msg, dados_renovacao = confirmar_presenca(atendimento_id)
+    session.pop('pacote_primeiro_banho', None)
+    sucesso, msg, dados_renovacao, dados_primeiro_banho = confirmar_presenca(atendimento_id)
 
     # Buscamos o atendimento para extrair os dados do cliente
     atendimento = Atendimento.query.get(atendimento_id)
-    
+
     if dados_renovacao and atendimento:
         # Injetamos o telefone e nomes para usar no botão do WhatsApp
         dados_renovacao['telefone_cliente'] = atendimento.cliente.telefone
         dados_renovacao['nome_tutor'] = atendimento.cliente.nome_tutor
         dados_renovacao['nome_pet'] = atendimento.cliente.nome_pet
         session['pacote_para_renovar'] = dados_renovacao
+
+    if dados_primeiro_banho and atendimento:
+        session['pacote_primeiro_banho'] = dados_primeiro_banho
 
     data_str = atendimento.data.isoformat() if atendimento else date.today().isoformat()
 
@@ -220,9 +247,10 @@ def confirmar_presenca_route(atendimento_id):
             'success': sucesso,
             'message': msg,
             'atendimento_id': atendimento_id,
-            'precisa_renovar': bool(dados_renovacao)
+            'precisa_renovar': bool(dados_renovacao),
+            'precisa_perguntar_primeiro_banho': bool(dados_primeiro_banho)
         }
-        if dados_renovacao:
+        if dados_renovacao or dados_primeiro_banho:
             resposta['redirect_url'] = url_for('agenda.agenda_do_dia', data=data_str)
         return jsonify(resposta)
 

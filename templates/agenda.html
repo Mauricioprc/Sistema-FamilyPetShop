@@ -142,7 +142,7 @@
     {% endfor %}
   </div>
 
-  {% if session.pacote_para_renovar %}
+  {% if session.pacote_para_renovar and pacote_concluido %}
   <div class="modal fade" id="modalRenovarPacote" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
@@ -151,12 +151,75 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div id="corpoModalRenovacao" class="modal-body">
-          <p>O pacote de <strong>{{ session.pacote_para_renovar.creditos_totais }}x {{ session.pacote_para_renovar.nome_servico }}</strong> foi finalizado.</p>
-          <p><strong>Deseja renovar e agendar os próximos atendimentos automaticamente?</strong></p>
+          <p>O pacote de <strong>{{ pacote_concluido.creditos_totais }}x {{ pacote_concluido.nome_servico }}</strong> do(a) {{ pacote_concluido.cliente.nome_pet }} foi finalizado. Resumo dos atendimentos:</p>
+          <div class="list-group mb-3">
+            {% for a in atendimentos_pacote_concluido %}
+              <span class="list-group-item d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-calendar-check"></i> {{ a.data.strftime('%d/%m/%Y') }}</span>
+                {% if a.status_presenca == 'Presente' %}
+                  <span class="badge bg-success">Presente</span>
+                {% elif a.status_presenca == 'Faltou' %}
+                  <span class="badge bg-danger">Faltou</span>
+                {% else %}
+                  <span class="badge bg-secondary">{{ a.status_presenca }}</span>
+                {% endif %}
+              </span>
+            {% endfor %}
+          </div>
+          <p class="mb-0">
+            💰 Status do pagamento:
+            {% if pacote_concluido.status_pagamento == 'Pago' %}
+              <span class="badge bg-success">Pago</span>
+            {% else %}
+              <span class="badge bg-warning text-dark">{{ pacote_concluido.status_pagamento }}</span>
+            {% endif %}
+          </p>
         </div>
-        <div id="footerModalRenovacao" class="modal-footer">
-          <button id="btn-calcular-renovacao" type="button" class="btn btn-orange-custom">Sim, Ver as Datas</button>
-          <a href="{{ url_for('pacotes.limpar_renovacao') }}" class="btn btn-secondary">Não, Obrigado</a>
+        <div id="footerModalRenovacao" class="modal-footer flex-wrap">
+          <button id="btn-enviar-resumo-pacote" type="button"
+                  class="btn btn-success"
+                  data-url="{{ url_for('whatsapp.pacote_concluido', pacote_id=pacote_concluido.id) }}">
+            <i class="bi bi-whatsapp"></i> Enviar Resumo ao Cliente
+          </button>
+          <button id="btn-calcular-renovacao" type="button" class="btn btn-orange-custom">Renovar Pacote</button>
+          <a href="{{ url_for('pacotes.limpar_renovacao') }}" class="btn btn-secondary">Fechar</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if session.pacote_primeiro_banho and pacote_primeiro_banho %}
+  <div class="modal fade" id="modalPrimeiroBanho" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header btn-orange-custom text-white">
+          <h5 class="modal-title"><i class="bi bi-stars"></i> Primeiro Banho do Pacote!</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p>Esse é o primeiro banho do pacote de <strong>{{ pacote_primeiro_banho.creditos_totais }}x {{ pacote_primeiro_banho.nome_servico }}</strong> do(a) {{ pacote_primeiro_banho.cliente.nome_pet }}.</p>
+          <p><strong>Deseja enviar para o cliente as datas do pacote?</strong></p>
+          <div class="list-group mb-0">
+            {% for a in atendimentos_primeiro_banho %}
+              <span class="list-group-item d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-calendar-check"></i> {{ a.data.strftime('%d/%m/%Y') }}</span>
+                {% if a.status_presenca == 'Presente' %}
+                  <span class="badge bg-success">Presente</span>
+                {% else %}
+                  <span class="badge bg-secondary">Agendado</span>
+                {% endif %}
+              </span>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="btn-enviar-primeiro-banho" type="button"
+                  class="btn btn-success"
+                  data-url="{{ url_for('whatsapp.pacote_primeiro_banho', pacote_id=pacote_primeiro_banho.id) }}">
+            <i class="bi bi-whatsapp"></i> Sim, Enviar
+          </button>
+          <a href="{{ url_for('pacotes.limpar_primeiro_banho') }}" class="btn btn-secondary">Não</a>
         </div>
       </div>
     </div>
@@ -298,17 +361,23 @@ document.querySelectorAll('.btn-wpp-reagendamento').forEach(btn => {
 });
 
 // -----------------------------------------------------------------------
-// Modal de renovação de pacote
+// Modal de pacote concluído (resumo + renovação)
 // -----------------------------------------------------------------------
 $(document).ready(function() {
   const modalRenovarEl = document.getElementById('modalRenovarPacote');
   if (modalRenovarEl) {
     const modalRenovar = new bootstrap.Modal(modalRenovarEl);
-    const corpo = document.getElementById('corpoModalRenovacao');
+    const corpo  = document.getElementById('corpoModalRenovacao');
     const footer = document.getElementById('footerModalRenovacao');
     modalRenovar.show();
 
-    document.getElementById('btn-calcular-renovacao').addEventListener('click', async function() {
+    // Envia o resumo do pacote finalizado (datas + presença + pagamento)
+    document.getElementById('btn-enviar-resumo-pacote')?.addEventListener('click', function() {
+      abrirWpp(this.dataset.url);
+    });
+
+    // Renovação: mostra as novas datas calculadas e permite confirmar
+    document.getElementById('btn-calcular-renovacao')?.addEventListener('click', async function() {
       this.disabled = true;
       this.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Calculando...';
       try {
@@ -318,33 +387,16 @@ $(document).ready(function() {
 
         corpo.innerHTML = '<p>O novo pacote será agendado para:</p>';
         const lista = document.createElement('div');
-        lista.className = 'list-group mb-3';
-
-        let datasWpp = [];
+        lista.className = 'list-group mb-0';
         data.datas_formatadas.forEach(d => {
           const s = document.createElement('span');
           s.className = 'list-group-item';
           s.innerHTML = `<i class="bi bi-calendar-check"></i> ${d}`;
           lista.appendChild(s);
-          datasWpp.push(d);
         });
         corpo.appendChild(lista);
 
-        {% if session.pacote_para_renovar %}
-            const telLimpo = "{{ session.pacote_para_renovar.telefone_cliente | default('') | replace(' ', '') | replace('-', '') | replace('(', '') | replace(')', '') }}";
-            const tutor    = "{{ session.pacote_para_renovar.nome_tutor   | default('') }}";
-            const pet      = "{{ session.pacote_para_renovar.nome_pet     | default('') }}";
-            const servico  = "{{ session.pacote_para_renovar.nome_servico | default('serviço') }}";
-        {% else %}
-            const telLimpo = ""; const tutor = ""; const pet = ""; const servico = "";
-        {% endif %}
-
-        const listaDatasTexto = datasWpp.join('\n- ');
-        const msgPacote = `Olá ${tutor}! O pacote de ${servico} do(a) ${pet} foi renovado com sucesso! 🎉\n\nAs próximas datas agendadas são:\n- ${listaDatasTexto}\n\nQualquer dúvida, estamos à disposição!`;
-        const linkWpp   = `https://wa.me/55${telLimpo}?text=${encodeURIComponent(msgPacote)}`;
-
         footer.innerHTML = `
-          <a href="${linkWpp}" target="_blank" class="btn btn-success"><i class="bi bi-whatsapp"></i> Enviar Datas</a>
           <form action="{{ url_for('pacotes.renovar') }}" method="POST" class="d-inline">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-primary-custom">Confirmar e Renovar</button>
@@ -353,6 +405,18 @@ $(document).ready(function() {
       } catch(e) {
         corpo.innerHTML = `<p class="text-danger">Erro: ${e.message}</p>`;
       }
+    });
+  }
+
+  // -----------------------------------------------------------------------
+  // Modal do primeiro banho do pacote
+  // -----------------------------------------------------------------------
+  const modalPrimeiroEl = document.getElementById('modalPrimeiroBanho');
+  if (modalPrimeiroEl) {
+    new bootstrap.Modal(modalPrimeiroEl).show();
+
+    document.getElementById('btn-enviar-primeiro-banho')?.addEventListener('click', function() {
+      abrirWpp(this.dataset.url);
     });
   }
 });
