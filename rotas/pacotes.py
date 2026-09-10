@@ -249,5 +249,12 @@ def limpar_renovacao():
     return redirect(url_for('agenda.agenda_do_dia'))
 
 
+@pacotes_bp.route('/pacote/limpar_primeiro_banho')
+@login_required
+def limpar_primeiro_banho():
+    session.pop('pacote_primeiro_banho', None)
+    return redirect(url_for('agenda.agenda_do_dia'))
+
+
 
 

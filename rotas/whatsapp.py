@@ -11,6 +11,8 @@ Endpoints:
   GET  /api/whatsapp/cobranca_pacote/<pacote_id>    → Cobrança de pacote (financeiro)
   GET  /api/whatsapp/reagendamento/<atendimento_id> → Aviso de reagendamento (agenda)
   GET  /api/whatsapp/cobranca_cliente/<cliente_id>  → Cobrança detalhada (detalhe do cliente)
+  GET  /api/whatsapp/pacote_primeiro_banho/<pacote_id> → Cronograma no 1º banho do pacote (agenda)
+  GET  /api/whatsapp/pacote_concluido/<pacote_id>      → Resumo do pacote finalizado (agenda)
 """
 # -*- coding: utf-8 -*-
 
@@ -22,6 +24,7 @@ from flask_login import login_required
 
 from extensions import db
 from models import Atendimento, Cliente, Pacote
+from utils import formatar_status_presenca
 
 whatsapp_bp = Blueprint('whatsapp', __name__, url_prefix='/api/whatsapp')
 
@@ -108,6 +111,57 @@ def _msg_cobranca_pacote(pacote: Pacote) -> str:
         servico=pacote.nome_servico,
         pet=pacote.cliente.nome_pet,
         valor='{:.2f}'.format(pacote.preco_pacote).replace('.', ','),
+    )
+
+
+def _listar_atendimentos_pacote(pacote: Pacote) -> str:
+    """Monta as linhas 'DD/MM/AAAA (Dia) — Status' dos atendimentos do pacote,
+    em ordem cronológica, para uso nas mensagens de resumo de pacote."""
+    atendimentos = pacote.atendimentos.order_by(Atendimento.data.asc()).all()
+    linhas = [
+        '- {data} — {status}'.format(
+            data=a.data.strftime('%d/%m/%Y (%A)').capitalize(),
+            status=formatar_status_presenca(a.status_presenca)
+        )
+        for a in atendimentos
+    ]
+    return '\n'.join(linhas)
+
+
+def _msg_primeiro_banho_pacote(pacote: Pacote) -> str:
+    """Mensagem enviada quando o cliente comparece ao 1º banho do pacote,
+    informando o cronograma completo (todas as datas) do pacote."""
+    return (
+        'Olá {tutor}! 🎉 Esse foi o primeiro banho do pacote de '
+        '{creditos}x {servico} do(a) {pet}!\n\n'
+        'As datas do pacote são:\n{datas}\n\n'
+        'Qualquer dúvida, estamos à disposição! 🙏'
+    ).format(
+        tutor=pacote.cliente.nome_tutor,
+        creditos=pacote.creditos_totais,
+        servico=pacote.nome_servico,
+        pet=pacote.cliente.nome_pet,
+        datas=_listar_atendimentos_pacote(pacote),
+    )
+
+
+def _msg_pacote_concluido(pacote: Pacote) -> str:
+    """Mensagem enviada quando o pacote é concluído (último crédito usado),
+    com o resumo do que aconteceu (presença/falta) e o status de pagamento
+    do pacote — em vez das datas de uma renovação ainda não confirmada."""
+    status_pgto = 'Pago ✅' if pacote.status_pagamento == 'Pago' else 'Pendente ⚠️'
+    return (
+        'Olá {tutor}! O pacote de {creditos}x {servico} do(a) {pet} '
+        'foi finalizado! Aqui está o resumo:\n\n{datas}\n\n'
+        '💰 Status do pagamento: {status_pgto}\n\n'
+        'Qualquer dúvida, estamos à disposição! 🙏'
+    ).format(
+        tutor=pacote.cliente.nome_tutor,
+        creditos=pacote.creditos_totais,
+        servico=pacote.nome_servico,
+        pet=pacote.cliente.nome_pet,
+        datas=_listar_atendimentos_pacote(pacote),
+        status_pgto=status_pgto,
     )
 
 
@@ -222,6 +276,24 @@ def cobranca_pacote(pacote_id):
     """Cobrança de pacote pendente."""
     pacote = db.get_or_404(Pacote, pacote_id)
     url = _montar_url(pacote.cliente.telefone, _msg_cobranca_pacote(pacote))
+    return jsonify({'url': url})
+
+
+@whatsapp_bp.route('/pacote_primeiro_banho/<int:pacote_id>')
+@login_required
+def pacote_primeiro_banho(pacote_id):
+    """Aviso do 1º banho do pacote, com o cronograma completo de datas."""
+    pacote = db.get_or_404(Pacote, pacote_id)
+    url = _montar_url(pacote.cliente.telefone, _msg_primeiro_banho_pacote(pacote))
+    return jsonify({'url': url})
+
+
+@whatsapp_bp.route('/pacote_concluido/<int:pacote_id>')
+@login_required
+def pacote_concluido(pacote_id):
+    """Resumo do pacote finalizado (presença/falta + status de pagamento)."""
+    pacote = db.get_or_404(Pacote, pacote_id)
+    url = _montar_url(pacote.cliente.telefone, _msg_pacote_concluido(pacote))
     return jsonify({'url': url})
 
 

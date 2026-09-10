@@ -505,15 +505,30 @@ def consumir_credito(pacote) -> bool:
 def devolver_credito(pacote) -> None:
     """
     Devolver crédito para um pacote
-    
+
     Args:
         pacote: Objeto Pacote
     """
     if pacote.creditos_usados > 0:
         pacote.creditos_usados -= 1
-    
+
     if pacote.status == 'Concluido':
         pacote.status = 'Ativo'
+
+
+def formatar_status_presenca(status: str) -> str:
+    """
+    Traduz o status_presenca de um Atendimento para um texto amigável
+    usado nas mensagens de WhatsApp de resumo de pacote.
+    """
+    textos = {
+        'Presente': 'Presente ✅',
+        'Faltou': 'Faltou ❌',
+        'Agendado': 'Agendado',
+        'Solicitado_Online': 'Agendado',
+        'Cancelado': 'Cancelado',
+    }
+    return textos.get(status, status)
 
 
 # ============================================

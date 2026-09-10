@@ -86,16 +86,23 @@ def registrar_atendimento_avulso(form_data: dict) -> tuple[bool, str]:
         return False, 'Erro ao registrar atendimento.'
 
 
-def confirmar_presenca(atendimento_id: int) -> tuple[bool, str, dict | None]:
+def confirmar_presenca(atendimento_id: int) -> tuple[bool, str, dict | None, dict | None]:
     """
     Confirma presenca de um atendimento.
-    Retorna (sucesso, mensagem, dados_renovacao_se_necessario).
+    Retorna (sucesso, mensagem, dados_renovacao_se_necessario, dados_primeiro_banho_se_necessario).
+
+    dados_renovacao       -> preenchido quando este atendimento consumiu o ultimo
+                              credito do pacote (pacote concluido).
+    dados_primeiro_banho  -> preenchido quando este atendimento consumiu o
+                              PRIMEIRO credito do pacote (e o pacote nao foi
+                              concluido no mesmo passo, caso de pacotes de 1 credito).
     """
     atendimento = Atendimento.query.get(atendimento_id)
     if not atendimento:
-        return False, 'Atendimento nao encontrado.', None
+        return False, 'Atendimento nao encontrado.', None, None
 
     dados_renovacao = None
+    dados_primeiro_banho = None
 
     if atendimento.status_presenca != StatusAtendimento.PRESENTE.value:
         atendimento.status_presenca = StatusAtendimento.PRESENTE.value
@@ -103,7 +110,9 @@ def confirmar_presenca(atendimento_id: int) -> tuple[bool, str, dict | None]:
         if atendimento.pacote_id:
             pacote = Pacote.query.get(atendimento.pacote_id)
             if pacote:
+                era_primeiro = pacote.creditos_usados == 0
                 concluido = consumir_credito(pacote)
+
                 if concluido:
                     ultimo = Atendimento.query.filter_by(
                         pacote_id=pacote.id,
@@ -111,6 +120,7 @@ def confirmar_presenca(atendimento_id: int) -> tuple[bool, str, dict | None]:
                     ).order_by(Atendimento.data.desc()).first()
 
                     dados_renovacao = {
+                        'pacote_id': pacote.id,
                         'cliente_id': pacote.cliente_id,
                         'nome_servico': pacote.nome_servico,
                         'creditos_totais': pacote.creditos_totais,
@@ -121,11 +131,13 @@ def confirmar_presenca(atendimento_id: int) -> tuple[bool, str, dict | None]:
                         'vencimento_customizado': pacote.vencimento_customizado,
                         'data_vencimento_anterior': pacote.data_vencimento.isoformat() if pacote.data_vencimento else None
                     }
+                elif era_primeiro:
+                    dados_primeiro_banho = {'pacote_id': pacote.id}
 
     try:
         db.session.commit()
-        return True, 'Presenca confirmada!', dados_renovacao
+        return True, 'Presenca confirmada!', dados_renovacao, dados_primeiro_banho
     except Exception as e:
         db.session.rollback()
         logger.error(f"Erro ao confirmar presenca: {e}")
-        return False, 'Erro ao confirmar presenca.', None
+        return False, 'Erro ao confirmar presenca.', None, None
